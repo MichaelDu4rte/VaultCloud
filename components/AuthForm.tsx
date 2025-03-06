@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
+import { createAccount } from "@/lib/actions/user.actions";
+import { useState } from "react";
 
 type FormType = "sign-in" | "sign-up";
 
@@ -35,6 +37,8 @@ const authFormSchema = (formType: FormType) => {
 };
 
 const AuthForm = ({ type }: { type: FormType }) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [accountId, setAccountId] = useState(null);
   const formSchema = authFormSchema(type);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -44,7 +48,22 @@ const AuthForm = ({ type }: { type: FormType }) => {
     },
   });
 
-  const onSubmit = async () => {};
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsLoading(true);
+
+    try {
+      const user = await createAccount({
+        fullName: values.fullName || "",
+        email: values.email,
+      });
+
+      setAccountId(user.accountId);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <>
@@ -101,8 +120,16 @@ const AuthForm = ({ type }: { type: FormType }) => {
             )}
           />
 
-          <Button type="submit" className="form-submit-button">
-            {type === "sign-in" ? "Fazer login" : "Criar conta"}
+          <Button
+            type="submit"
+            className="form-submit-button"
+            disabled={isLoading}
+          >
+            {isLoading
+              ? "Carregando..."
+              : type === "sign-in"
+                ? "Fazer login"
+                : "Criar conta"}
           </Button>
 
           <div className="body-2 flex justify-center">
