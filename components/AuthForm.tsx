@@ -17,6 +17,8 @@ import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { createAccount } from "@/lib/actions/user.actions";
 import { useState } from "react";
+import { motion } from "framer-motion";
+import OTPModal from "./OTPModal";
 
 type FormType = "sign-in" | "sign-up";
 
@@ -85,7 +87,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
 
                     <FormControl>
                       <Input
-                        placeholder="Preenche seu nome completo"
+                        placeholder="Preencha seu nome completo"
                         className="shad-input"
                         {...field}
                       />
@@ -122,14 +124,31 @@ const AuthForm = ({ type }: { type: FormType }) => {
 
           <Button
             type="submit"
-            className="form-submit-button"
+            className="form-submit-button relative"
             disabled={isLoading}
           >
-            {isLoading
-              ? "Carregando..."
-              : type === "sign-in"
-                ? "Fazer login"
-                : "Criar conta"}
+            {isLoading ? (
+              <div className="flex space-x-1">
+                {[0, 1, 2].map((index) => (
+                  <motion.div
+                    key={index}
+                    className="h-4 w-6 rounded-full bg-white"
+                    style={{ borderRadius: "50% 50% 40% 40%" }}
+                    animate={{ opacity: [0.3, 1, 0.3], y: [0, -2, 0] }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: 1.2,
+                      ease: "easeInOut",
+                      delay: index * 0.2,
+                    }}
+                  />
+                ))}
+              </div>
+            ) : type === "sign-in" ? (
+              "Fazer login"
+            ) : (
+              "Criar conta"
+            )}
           </Button>
 
           <div className="body-2 flex justify-center">
@@ -145,6 +164,10 @@ const AuthForm = ({ type }: { type: FormType }) => {
           </div>
         </form>
       </Form>
+
+      {accountId && (
+        <OTPModal email={form.getValues("email")} accountId={accountId} />
+      )}
     </>
   );
 };

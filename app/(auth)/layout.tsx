@@ -34,7 +34,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       </section>
 
       <section className="flex flex-1 flex-col items-center bg-white px-6 py-10 lg:justify-center lg:px-12 lg:py-0">
-        <div className="mb-12 lg:hidden">
+        <div className="mb-12 text-start lg:hidden">
           <Image
             src="/logo.png"
             alt="logo"
