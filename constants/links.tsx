@@ -19,8 +19,8 @@ export const SIDENAV_ITEMS: SideNavItem[] = [
     ],
   },
   {
-    title: "Messages",
-    path: "/documents",
+    title: "Images",
+    path: "/images",
     icon: <Icon icon="lucide:mail" width="24" height="24" />,
   },
   {

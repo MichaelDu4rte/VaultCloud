@@ -69,7 +69,13 @@ export const uploadFile = async ({
 };
 
 // Gera os filtros e ordenações para consulta de arquivos
-const createQueries = (currentUser: Models.Document) => {
+const createQueries = (
+  currentUser: Models.Document,
+  types: string[],
+  searchText: string,
+  sort: string,
+  limit?: number
+) => {
   const queries = [
     // Consulta arquivos que o usuário é dono ou tem acesso via e-mail
     Query.or([
@@ -78,18 +84,35 @@ const createQueries = (currentUser: Models.Document) => {
     ]),
   ];
 
+  if (types.length > 0) queries.push(Query.equal("type", types));
+  if (searchText.length > 0) queries.push(Query.contains("name", searchText));
+  if (limit) queries.push(Query.limit(limit));
+
+  if (sort) {
+    const [sortBy, orderBy] = sort.split("-");
+
+    queries.push(
+      orderBy === "asc" ? Query.orderAsc(sortBy) : Query.orderDesc(sortBy)
+    );
+  }
+
   return queries;
 };
 
 // Recupera arquivos baseados nos filtros fornecidos
-export const getFiles = async () => {
+export const getFiles = async ({
+  types = [],
+  searchText = "",
+  sort = "$createdAt-desc",
+  limit,
+}: GetFilesProps) => {
   const { databases } = await createAdminClient();
 
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser) throw new Error("User not found");
 
-    const queries = createQueries(currentUser);
+    const queries = createQueries(currentUser, types, searchText, sort, limit);
 
     const files = await databases.listDocuments(
       appwriteConfig.databaseId,
