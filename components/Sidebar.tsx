@@ -10,15 +10,18 @@ import Image from "next/image";
 import { SIDENAV_ITEMS } from "../constants/links";
 import { SideNavItem } from "../constants/types";
 import { signOutUser } from "@/lib/actions/user.actions";
+import FileUploader from "./FileUploader";
 
 interface Props {
   fullName: string;
   avatar: string;
+  userId: string;
+  accountId: string;
 }
 
-const Sidebar = ({ fullName, avatar }: Props) => {
+const Sidebar = ({ fullName, avatar, userId, accountId }: Props) => {
   return (
-    <div className="fixed hidden h-screen w-64 border-r border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900 md:flex">
+    <div className="fixed hidden h-screen w-60 border-r border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900 md:flex">
       <div className="flex size-full flex-col">
         {/* Topo - Logo */}
         <Link
@@ -38,6 +41,18 @@ const Sidebar = ({ fullName, avatar }: Props) => {
           ))}
         </div>
 
+        <div className="px-4 py-6">
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800">
+            <FileUploader
+              ownerId={userId}
+              accountId={accountId}
+              className="flex w-full cursor-pointer items-center justify-center rounded-md border-2 border-dashed border-zinc-300 p-3 transition-all hover:border-zinc-500 dark:border-zinc-600 dark:hover:border-zinc-400"
+            />
+            <p className="mt-2 text-center text-xs text-zinc-500 dark:text-zinc-400">
+              Arraste ou clique para enviar arquivos
+            </p>
+          </div>
+        </div>
         {/* Rodapé - Usuário */}
         <div className="border-t border-zinc-200 px-6 py-4 dark:border-zinc-700">
           <div className="flex items-center justify-between">

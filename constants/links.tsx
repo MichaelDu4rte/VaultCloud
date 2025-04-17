@@ -9,19 +9,18 @@ export const SIDENAV_ITEMS: SideNavItem[] = [
     icon: <Icon icon="lucide:home" width="24" height="24" />,
   },
   {
-    title: "Projects",
-    path: "/projects",
+    title: "LI",
+    path: "/licencadeimportacao",
     icon: <Icon icon="lucide:folder" width="24" height="24" />,
     submenu: true,
     subMenuItems: [
-      { title: "All", path: "/projects" },
-      { title: "Web Design", path: "/projects/web-design" },
-      { title: "Graphic Design", path: "/projects/graphic-design" },
+      { title: "Controle de li", path: "/controledeli" },
+      { title: "Recebimento", path: "/recebimentoli" },
     ],
   },
   {
     title: "Messages",
-    path: "/messages",
+    path: "/documents",
     icon: <Icon icon="lucide:mail" width="24" height="24" />,
   },
   {
