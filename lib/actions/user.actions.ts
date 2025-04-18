@@ -197,3 +197,34 @@ export const getAllUsers = async () => {
     avatarUrl: doc.avatar,
   }));
 };
+
+export const updateUser = async ({
+  userId,
+  fullName,
+  email,
+  avatar,
+}: {
+  userId: string;
+  fullName: string;
+  email: string;
+  avatar: string;
+}) => {
+  try {
+    const { databases } = await createAdminClient();
+
+    await databases.updateDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.userCollectionId,
+      userId,
+      {
+        fullName,
+        email,
+        avatar,
+      }
+    );
+
+    return { success: true };
+  } catch (error) {
+    handleError(error, "Erro ao atualizar usuário");
+  }
+};

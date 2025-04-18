@@ -57,7 +57,7 @@ const Sidebar = ({ fullName, avatar }: Props) => {
                   {fullName.charAt(0).toUpperCase() + fullName.slice(1)}
                 </span>
                 <Link
-                  href="/profile"
+                  href="/settings/profile"
                   className="text-xs text-zinc-500 hover:underline dark:text-zinc-400"
                 >
                   Ver perfil

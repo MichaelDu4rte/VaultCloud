@@ -28,7 +28,10 @@ export const SIDENAV_ITEMS: SideNavItem[] = [
     path: "/settings",
     icon: <Icon icon="lucide:settings" width="24" height="24" />,
     submenu: true,
-    subMenuItems: [{ title: "Usuarios", path: "/settings/users" }],
+    subMenuItems: [
+      { title: "Usuarios", path: "/settings/users" },
+      { title: "Perfil", path: "/settings/profile" },
+    ],
   },
   {
     title: "Help",
