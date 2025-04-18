@@ -96,7 +96,7 @@ export default Sidebar;
 const MenuItem = ({ item }: { item: SideNavItem }) => {
   const pathname = usePathname();
   const [subMenuOpen, setSubMenuOpen] = useState(false);
-  const isActive = pathname.includes(item.path);
+  const isActive = pathname.startsWith(item.path);
 
   const toggleSubMenu = () => setSubMenuOpen(!subMenuOpen);
 
@@ -152,9 +152,7 @@ const MenuItem = ({ item }: { item: SideNavItem }) => {
         <Link
           href={item.path}
           className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-700 transition-all hover:bg-zinc-100 hover:shadow-sm dark:text-zinc-100 dark:hover:bg-zinc-800 ${
-            pathname === item.path
-              ? "bg-zinc-100 font-semibold dark:bg-zinc-800"
-              : ""
+            isActive ? "bg-zinc-100 font-semibold dark:bg-zinc-800" : ""
           }`}
         >
           {item.icon}

@@ -24,14 +24,11 @@ export const SIDENAV_ITEMS: SideNavItem[] = [
     icon: <Icon icon="lucide:mail" width="24" height="24" />,
   },
   {
-    title: "Settings",
+    title: "Configurações",
     path: "/settings",
     icon: <Icon icon="lucide:settings" width="24" height="24" />,
     submenu: true,
-    subMenuItems: [
-      { title: "Account", path: "/settings/account" },
-      { title: "Privacy", path: "/settings/privacy" },
-    ],
+    subMenuItems: [{ title: "Usuarios", path: "/settings/users" }],
   },
   {
     title: "Help",

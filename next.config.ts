@@ -32,6 +32,15 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/settings",
+        destination: "/settings/users", // Redireciona de /settings para /settings/users
+        permanent: true, // O redirecionamento é permanente (código de status 308)
+      },
+    ];
+  },
 };
 
 export default nextConfig;

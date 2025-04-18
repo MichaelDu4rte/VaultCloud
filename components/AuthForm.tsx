@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { createAccount } from "@/lib/actions/user.actions";
+import { createAccount, signInUser } from "@/lib/actions/user.actions";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import OTPModal from "./OTPModal";
@@ -54,10 +54,16 @@ const AuthForm = ({ type }: { type: FormType }) => {
     setIsLoading(true);
 
     try {
-      const user = await createAccount({
-        fullName: values.fullName || "",
-        email: values.email,
-      });
+      let user;
+
+      if (type === "sign-in") {
+        user = await signInUser({ email: values.email });
+      } else {
+        user = await createAccount({
+          fullName: values.fullName || "",
+          email: values.email,
+        });
+      }
 
       setAccountId(user.accountId);
     } catch (error) {

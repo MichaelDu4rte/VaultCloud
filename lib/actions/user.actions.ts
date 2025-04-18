@@ -149,17 +149,51 @@ export const signOutUser = async () => {
 // Realiza o login do usuário com autenticação via OTP
 export const signInUser = async ({ email }: { email: string }) => {
   try {
+    // Verifica se o usuário já existe no banco de dados
     const existingUser = await getUserByEmail(email);
 
-    // Se o usuário existir, envia um código OTP para autenticação
-    if (existingUser) {
-      await sendEmailOTP({ email });
-      return parseStringify({ accountId: existingUser.accountId });
+    // Se o usuário não for encontrado, retorna um erro informando que o usuário não existe
+    if (!existingUser) {
+      return parseStringify({ accountId: null, error: "User not found" });
     }
 
-    // Se o usuário não for encontrado, retorna um erro
-    return parseStringify({ accountId: null, error: "User not found" });
+    // Se o usuário existir, envia o OTP e retorna o accountId
+    await sendEmailOTP({ email });
+
+    return parseStringify({ accountId: existingUser.accountId });
   } catch (error) {
     handleError(error, "Failed to sign in user");
   }
+};
+
+export const deleteUser = async (userId: string) => {
+  try {
+    const { databases } = await createAdminClient();
+
+    await databases.deleteDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.userCollectionId,
+      userId
+    );
+
+    return { success: true };
+  } catch (error) {
+    handleError(error, "Erro ao deletar usuário");
+  }
+};
+
+export const getAllUsers = async () => {
+  const { databases } = await createAdminClient();
+
+  const result = await databases.listDocuments(
+    appwriteConfig.databaseId,
+    appwriteConfig.userCollectionId
+  );
+
+  return result.documents.map((doc) => ({
+    id: doc.$id,
+    name: doc.fullName,
+    email: doc.email,
+    avatarUrl: doc.avatar,
+  }));
 };

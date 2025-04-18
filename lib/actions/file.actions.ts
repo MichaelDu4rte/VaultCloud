@@ -44,7 +44,7 @@ export const uploadFile = async ({
       owner: ownerId,
       accountId,
       users: [],
-      bucketFile: bucketFile.$id,
+      bucketFileId: bucketFile.$id,
     };
 
     // Cria o documento com os dados do arquivo
