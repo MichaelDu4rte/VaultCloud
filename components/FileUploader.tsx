@@ -12,6 +12,7 @@ import { MAX_FILE_SIZE } from "@/constants";
 import { useToast } from "@/hooks/use-toast";
 import { uploadFile } from "@/lib/actions/file.actions";
 import { usePathname } from "next/navigation";
+import { Upload } from "lucide-react";
 
 interface Props {
   ownerId: string;
@@ -75,13 +76,7 @@ const FileUploader = ({ ownerId, accountId, className }: Props) => {
     <div {...getRootProps()} className="cursor-pointer">
       <input {...getInputProps()} />
       <Button type="button" className={cn("uploader-button", className)}>
-        <Image
-          src="/assets/icons/upload.svg"
-          alt="upload"
-          width={24}
-          height={24}
-        />{" "}
-        <p>Upload</p>
+        <Upload className="size-6" />
       </Button>
       {files.length > 0 && (
         <ul className="uploader-preview-list">
