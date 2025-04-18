@@ -1,5 +1,5 @@
+/* eslint-disable tailwindcss/no-custom-classname */
 import React, { useEffect, useState, useRef } from "react";
-import { Input } from "./ui/input";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Models } from "node-appwrite";
 import { getFiles } from "@/lib/actions/file.actions";
@@ -14,7 +14,7 @@ const Search = ({ closeModal }: { closeModal: () => void }) => {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const [debounceQuery] = useDebounce(query, 300);
-  const inputRef = useRef<HTMLInputElement | null>(null); // Criação da referência
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const fetchFiles = async () => {
@@ -71,42 +71,40 @@ const Search = ({ closeModal }: { closeModal: () => void }) => {
   };
 
   return (
-    <div className="flex flex-col items-center">
-      <Input
+    <div className="flex flex-col items-center gap-4">
+      <input
         ref={inputRef}
         value={query}
-        placeholder="Pesquisar..."
-        className="w-full rounded-md border p-4 focus:ring-2"
+        placeholder="Pesquisar arquivos..."
+        className="focus:border-blue-500 focus:ring-blue-300 placeholder:gray-500 w-full rounded-lg border border-black/10 bg-white/90 px-4 py-3 text-sm text-black shadow-inner outline-none transition duration-150 focus:ring-2"
         onChange={(e) => setQuery(e.target.value)}
       />
+
       {open && (
-        <ul className="mt-4 max-h-60 w-full overflow-auto">
+        <ul className="mt-2 max-h-60 w-full overflow-auto rounded-lg bg-white/90 shadow-md ring-1 ring-black/5 backdrop-blur-md">
           {results.length > 0 ? (
             results.map((file) => (
               <li
                 key={file.$id}
-                className="flex cursor-pointer items-center justify-between p-2 hover:bg-light-400"
+                className="flex cursor-pointer items-center justify-between gap-2 px-4 py-3 transition-colors hover:bg-gray-100"
                 onClick={() => handleClickItem(file)}
               >
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                   <Thumbnail
                     type={file.type}
                     extension={file.extension}
                     url={file.url}
-                    className="size-9 min-w-9"
+                    className="size-8 min-w-8"
                   />
-                  <p className="text-sm text-light-100">{file.name}</p>
+                  <p className="text-sm text-gray-800">{file.name}</p>
                 </div>
               </li>
             ))
           ) : (
-            <p className="empty-result">Sem resultados.</p>
+            <p className="px-4 py-3 text-sm text-gray-500">Sem resultados.</p>
           )}
         </ul>
       )}
-      <button onClick={closeModal} className="mt-4 text-black">
-        Fechar
-      </button>
     </div>
   );
 };

@@ -51,14 +51,15 @@ const Header = ({
       </div>
 
       {isSearchModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
-          <div className="w-1/3 max-w-md rounded-lg bg-white p-6 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+          <div className="relative w-full max-w-2xl rounded-xl border border-black/10 bg-white/80 p-4 text-black shadow-2xl backdrop-blur-xl transition-all duration-200 ease-in-out">
             <button
               onClick={toggleSearchModal}
-              className="absolute right-4 top-4 text-gray-600 hover:text-gray-800"
+              className="absolute right-7 top-[29px] text-sm text-gray-500 hover:text-gray-700"
             >
               ✕
             </button>
+
             <Search closeModal={toggleSearchModal} />
           </div>
         </div>
