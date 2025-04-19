@@ -9,6 +9,7 @@ export const createLicencaImportacao = async (data: {
   importador: string;
   referenciaDoCliente: string;
   numeroOrquestra: string;
+  numeroLi: string;
   ncm: string;
   dataRegistroLI: string;
   dataInclusaoOrquestra: string;
@@ -41,6 +42,7 @@ export const updateLicencaImportacao = async (
     importador: string;
     referenciaDoCliente: string;
     numeroOrquestra: string;
+    numeroLi: string;
     ncm: string;
     dataRegistroLI: string;
     dataInclusaoOrquestra: string;
