@@ -2,8 +2,7 @@
 
 import { createAdminClient } from "@/lib/appwrite";
 import { appwriteConfig } from "@/lib/appwrite/config";
-import { ID } from "node-appwrite";
-
+import { ID, Query } from "node-appwrite";
 export const createLicencaImportacao = async (data: {
   imp: string;
   importador: string;
@@ -76,7 +75,8 @@ export const getLicencasImportacao = async () => {
 
     const result = await databases.listDocuments(
       appwriteConfig.databaseId,
-      appwriteConfig.licencaImportacaoCollectionId
+      appwriteConfig.licencaImportacaoCollectionId,
+      [Query.limit(7000)]
     );
 
     return result.documents;

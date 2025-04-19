@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+import * as XLSX from "xlsx";
 
 import React, { useState, useEffect } from "react";
 import {
@@ -45,7 +46,8 @@ const formatarDataInternacional = (data: string) => {
 };
 
 const Page = () => {
-  const [data, setData] = useState<any[] | null>(null); // Inicializa como null
+  const [data, setData] = useState<any[] | null>(null);
+
   const [form, setForm] = useState({
     imp: "",
     importador: "",
@@ -62,7 +64,6 @@ const Page = () => {
 
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true); // Adiciona estado de carregamento
 
   const calcularPrevisaoDeferimento = (dataInclusao: string): string => {
     const data = new Date(dataInclusao);
@@ -83,15 +84,13 @@ const Page = () => {
           ),
           previsaoDeferimento: formatarDataBrasileira(item.previsaoDeferimento),
         }));
-        setData(formatadas);
+        setData(formatadas); // Atualiza o estado com os dados mais recentes do DB
       } catch (error) {
         console.error("Erro ao buscar Licenças de Importação:", error);
-      } finally {
-        setLoading(false);
       }
     };
     fetchLicencas();
-  }, []);
+  }, []); // A dependência vazia garante que a chamada ocorra apenas no carregamento inicial
 
   const handleDuplicate = (index: number) => {
     const original = data![index];
@@ -223,259 +222,30 @@ const Page = () => {
     );
   });
 
-  if (loading)
-    return (
-      <div className="space-y-10 rounded-2xl bg-white p-8 shadow-md dark:border dark:border-white/20 dark:bg-zinc-900/80">
-        <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:gap-0">
-          <div>
-            <h1 className="mb-2 text-3xl font-bold tracking-tight">
-              Controle de Licenças de Importação
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Visualize e gerencie as LIs registradas.
-            </p>
+  const exportarParaExcel = () => {
+    if (!data || data.length === 0) return;
 
-            <Input
-              placeholder="Buscar por IMP, importador ou referência"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="mt-4 w-full md:w-96"
-            />
-          </div>
+    const dadosParaExportar = data.map((item) => ({
+      IMP: item.imp,
+      Importador: item.importador,
+      "Referência do Cliente": item.referenciaDoCliente,
+      "Número do Orquestra": item.numeroOrquestra,
+      "Número da LI": item.numeroLi,
+      NCM: item.ncm,
+      "Data Registro LI": item.dataRegistroLI,
+      "Data Inclusão Orquestra": item.dataInclusaoOrquestra,
+      "Previsão Deferimento": item.previsaoDeferimento,
+      Situação: item.situacao,
+      Observações: item.observacoes,
+    }));
 
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button>Adicionar LI</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl">
-              <DialogHeader>
-                <DialogTitle>Nova Licença de Importação</DialogTitle>
-              </DialogHeader>
+    const worksheet = XLSX.utils.json_to_sheet(dadosParaExportar);
+    const workbook = XLSX.utils.book_new();
 
-              <div className="grid grid-cols-1 gap-4 py-4 md:grid-cols-2 lg:grid-cols-3">
-                <Input
-                  placeholder="Informe a IMP"
-                  value={form.imp}
-                  onChange={(e) => setForm({ ...form, imp: e.target.value })}
-                  className="w-full"
-                />
-                <Input
-                  placeholder="Importador"
-                  value={form.importador}
-                  onChange={(e) =>
-                    setForm({ ...form, importador: e.target.value })
-                  }
-                  className="w-full"
-                />
-                <Input
-                  placeholder="Referência do Cliente"
-                  value={form.referenciaDoCliente}
-                  onChange={(e) =>
-                    setForm({ ...form, referenciaDoCliente: e.target.value })
-                  }
-                  className="w-full"
-                />
-                <Input
-                  placeholder="Número do Orquestra"
-                  value={form.numeroOrquestra}
-                  onChange={(e) =>
-                    setForm({ ...form, numeroOrquestra: e.target.value })
-                  }
-                  className="w-full"
-                />
-                <Input
-                  placeholder="Número da Li"
-                  value={form.numeroLi}
-                  onChange={(e) =>
-                    setForm({ ...form, numeroLi: e.target.value })
-                  }
-                  className="w-full"
-                />
-                <Input
-                  placeholder="NCM"
-                  value={form.ncm}
-                  onChange={(e) => setForm({ ...form, ncm: e.target.value })}
-                  className="w-full"
-                />
-                <Input
-                  placeholder="Data Registro LI "
-                  value={form.dataRegistroLI}
-                  onChange={(e) =>
-                    setForm({ ...form, dataRegistroLI: e.target.value })
-                  }
-                  className="w-full"
-                />
-                <Input
-                  placeholder="Data Pagamento Orquestra"
-                  value={form.dataInclusaoOrquestra}
-                  onChange={(e) =>
-                    setForm({ ...form, dataInclusaoOrquestra: e.target.value })
-                  }
-                  className="w-full"
-                />
-                <div>
-                  <Input
-                    type="text"
-                    value={form.previsaoDeferimento}
-                    readOnly
-                    className="w-full"
-                    placeholder="Previsão de Deferimento"
-                  />
-                </div>
-                <Textarea
-                  placeholder="Observações"
-                  className="min-h-[80px] w-full"
-                  value={form.observacoes}
-                  onChange={(e) =>
-                    setForm({ ...form, observacoes: e.target.value })
-                  }
-                />
-              </div>
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Licenças de Importação");
 
-              <DialogFooter className="mt-4 flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                  className="w-full sm:w-auto"
-                >
-                  Cancelar
-                </Button>
-                <Button onClick={handleAdd} className="w-full sm:w-auto">
-                  Salvar
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-    );
-
-  if (!data || data.length === 0)
-    return (
-      <div className="space-y-10 rounded-2xl bg-white p-8 shadow-md dark:border dark:border-white/20 dark:bg-zinc-900/80">
-        <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:gap-0">
-          <div>
-            <h1 className="mb-2 text-3xl font-bold tracking-tight">
-              Controle de Licenças de Importação
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Visualize e gerencie as LIs registradas.
-            </p>
-
-            <Input
-              placeholder="Buscar por IMP, importador ou referência"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="mt-4 w-full md:w-96"
-            />
-          </div>
-
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button>Adicionar LI</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl">
-              <DialogHeader>
-                <DialogTitle>Nova Licença de Importação</DialogTitle>
-              </DialogHeader>
-
-              <div className="grid grid-cols-1 gap-4 py-4 md:grid-cols-2 lg:grid-cols-3">
-                <Input
-                  placeholder="Informe a IMP"
-                  value={form.imp}
-                  onChange={(e) => setForm({ ...form, imp: e.target.value })}
-                  className="w-full"
-                />
-                <Input
-                  placeholder="Importador"
-                  value={form.importador}
-                  onChange={(e) =>
-                    setForm({ ...form, importador: e.target.value })
-                  }
-                  className="w-full"
-                />
-                <Input
-                  placeholder="Referência do Cliente"
-                  value={form.referenciaDoCliente}
-                  onChange={(e) =>
-                    setForm({ ...form, referenciaDoCliente: e.target.value })
-                  }
-                  className="w-full"
-                />
-                <Input
-                  placeholder="Número do Orquestra"
-                  value={form.numeroOrquestra}
-                  onChange={(e) =>
-                    setForm({ ...form, numeroOrquestra: e.target.value })
-                  }
-                  className="w-full"
-                />
-                <Input
-                  placeholder="Número da Li"
-                  value={form.numeroLi}
-                  onChange={(e) =>
-                    setForm({ ...form, numeroLi: e.target.value })
-                  }
-                  className="w-full"
-                />
-                <Input
-                  placeholder="NCM"
-                  value={form.ncm}
-                  onChange={(e) => setForm({ ...form, ncm: e.target.value })}
-                  className="w-full"
-                />
-                <Input
-                  placeholder="Data Registro LI "
-                  value={form.dataRegistroLI}
-                  onChange={(e) =>
-                    setForm({ ...form, dataRegistroLI: e.target.value })
-                  }
-                  className="w-full"
-                />
-                <Input
-                  placeholder="Data Pagamento Orquestra"
-                  value={form.dataInclusaoOrquestra}
-                  onChange={(e) =>
-                    setForm({ ...form, dataInclusaoOrquestra: e.target.value })
-                  }
-                  className="w-full"
-                />
-                <div>
-                  <Input
-                    type="text"
-                    value={form.previsaoDeferimento}
-                    readOnly
-                    className="w-full"
-                    placeholder="Previsão de Deferimento"
-                  />
-                </div>
-                <Textarea
-                  placeholder="Observações"
-                  className="min-h-[80px] w-full"
-                  value={form.observacoes}
-                  onChange={(e) =>
-                    setForm({ ...form, observacoes: e.target.value })
-                  }
-                />
-              </div>
-
-              <DialogFooter className="mt-4 flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                  className="w-full sm:w-auto"
-                >
-                  Cancelar
-                </Button>
-                <Button onClick={handleAdd} className="w-full sm:w-auto">
-                  Salvar
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-    );
+    XLSX.writeFile(workbook, "licencas-importacao.xlsx");
+  };
 
   return (
     <div className="space-y-10 rounded-2xl bg-white p-8 shadow-md dark:border dark:border-white/20 dark:bg-zinc-900/80">
@@ -487,13 +257,13 @@ const Page = () => {
           <p className="text-sm text-muted-foreground">
             Visualize e gerencie as LIs registradas.
           </p>
-
           <Input
             placeholder="Buscar por IMP, importador ou referência"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="mt-4 w-full md:w-96"
+            className="mb-5 mt-4 w-full md:w-96"
           />
+          <Button onClick={exportarParaExcel}>Exportar para Excel</Button>
         </div>
 
         <Dialog open={open} onOpenChange={setOpen}>
@@ -549,7 +319,7 @@ const Page = () => {
                 className="w-full"
               />
               <Input
-                placeholder="Data Registro LI "
+                placeholder="Data Registro LI (dd/mm/yyyy)"
                 value={form.dataRegistroLI}
                 onChange={(e) =>
                   setForm({ ...form, dataRegistroLI: e.target.value })
@@ -557,7 +327,7 @@ const Page = () => {
                 className="w-full"
               />
               <Input
-                placeholder="Data Pagamento Orquestra"
+                placeholder="Data Pagamento Orquestra (dd/mm/yyyy)"
                 value={form.dataInclusaoOrquestra}
                 onChange={(e) =>
                   setForm({ ...form, dataInclusaoOrquestra: e.target.value })
@@ -565,12 +335,14 @@ const Page = () => {
                 className="w-full"
               />
               <div>
+                <label className="text-sm font-medium text-muted-foreground">
+                  Previsão de Deferimento (automático)
+                </label>
                 <Input
                   type="text"
                   value={form.previsaoDeferimento}
                   readOnly
                   className="w-full"
-                  placeholder="Previsão de Deferimento"
                 />
               </div>
               <Textarea
@@ -611,9 +383,9 @@ const Page = () => {
               <TableHead>NCM</TableHead>
               <TableHead>Registro LI</TableHead>
               <TableHead>Data Pagamento</TableHead>
-              <TableHead>Prev. Deferimento</TableHead>
+              <TableHead>Previsão Deferimento</TableHead>
               <TableHead>Situação</TableHead>
-              <TableHead>Obs</TableHead>
+              <TableHead>Observações</TableHead>
               <TableHead>Ações</TableHead>
             </TableRow>
           </TableHeader>
