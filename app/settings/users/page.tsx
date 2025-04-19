@@ -88,11 +88,11 @@ export default function UsersPage() {
   };
 
   return (
-    <main className="min-h-screen flex-1 bg-light-400 px-6 py-10">
+    <main className="min-h-screen flex-1 bg-light-400 px-6 py-10 dark:border-white/20 dark:bg-zinc-900/80 dark:text-white">
       <div className="mx-auto max-w-7xl">
-        <div className="space-y-6 rounded-2xl border border-zinc-200 bg-white p-8 shadow-lg">
+        <div className="space-y-6 rounded-2xl border border-zinc-200 bg-white p-8 shadow-lg dark:border-white/20 dark:bg-zinc-900/80">
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold tracking-tight text-zinc-800">
+            <h1 className="text-3xl font-bold tracking-tight text-zinc-800 dark:text-light-300">
               Gerenciar Usuários
             </h1>
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -148,9 +148,9 @@ export default function UsersPage() {
             </Dialog>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-zinc-200">
+          <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-white/20">
             <Table>
-              <TableHeader className="bg-zinc-100">
+              <TableHeader className="bg-zinc-100 dark:bg-zinc-900/80">
                 <TableRow>
                   <TableHead className="w-[60px]">Foto</TableHead>
                   <TableHead>Nome</TableHead>
@@ -162,15 +162,15 @@ export default function UsersPage() {
                 {users.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>
-                      <Avatar className="size-9">
+                      <Avatar className="size-9 dark:text-white">
                         <AvatarImage src={user.avatarUrl} alt={user.name} />
                         <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                     </TableCell>
-                    <TableCell className="font-medium text-zinc-800">
+                    <TableCell className="font-medium text-zinc-800 dark:text-zinc-200">
                       {user.name.charAt(0).toUpperCase() + user.name.slice(1)}
                     </TableCell>
-                    <TableCell className="text-zinc-600">
+                    <TableCell className="text-zinc-200 dark:text-zinc-200">
                       {user.email}
                     </TableCell>
                     <TableCell className="text-right">

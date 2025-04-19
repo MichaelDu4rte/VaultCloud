@@ -15,7 +15,7 @@ const page = async ({ searchParams, params }: SearchParamProps) => {
   const files = await getFiles({ types, searchText, sort });
 
   return (
-    <div className="page-container">
+    <div className="page-container dark:bg-zinc-900/80 dark:text-white">
       <section className="w-full">
         <h1 className="h1 capitalize">{type}</h1>
 
@@ -25,7 +25,9 @@ const page = async ({ searchParams, params }: SearchParamProps) => {
           </p>
 
           <div className="sort-container">
-            <p className="body-1 hidden text-light-200 sm:block">Sort By: </p>
+            <p className="body-1 hidden text-light-200 dark:text-light-300 sm:block">
+              Sort By:{" "}
+            </p>
             <Sort />
           </div>
         </div>

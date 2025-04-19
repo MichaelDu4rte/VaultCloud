@@ -216,7 +216,7 @@ const Page = () => {
   });
 
   return (
-    <div className="space-y-10 rounded-2xl bg-white p-8 shadow-md">
+    <div className="space-y-10 rounded-2xl bg-white p-8 shadow-md dark:border dark:border-white/20 dark:bg-zinc-900/80">
       <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:gap-0">
         <div>
           <h1 className="mb-2 text-3xl font-bold tracking-tight">
@@ -448,13 +448,13 @@ const Page = () => {
                   <div className="flex gap-2">
                     <Button
                       onClick={() => handleDuplicate(index)}
-                      className="w-[40px]"
+                      className="w-[40px] dark:bg-zinc-800 dark:text-white"
                     >
                       <FaCopy />
                     </Button>
                     <Button
                       onClick={() => handleRemove(index)}
-                      className="w-[40px]"
+                      className="w-[40px] dark:bg-zinc-800 dark:text-white"
                     >
                       <FaTrashAlt />
                     </Button>

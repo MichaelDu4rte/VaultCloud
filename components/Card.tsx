@@ -39,11 +39,13 @@ const Card = ({ file }: { file: Models.Document }) => {
       </div>
 
       <div className="file-card-details">
-        <p className="subtitle-2 line-clamp-1">{file.name}</p>
-        <p className="body-2 text-light-100">
+        <p className="subtitle-2 line-clamp-1 dark:text-light-200">
+          {file.name}
+        </p>
+        <p className="body-2 text-light-100 dark:text-light-200">
           Criado em: {formatDateBR(file.$createdAt)}
         </p>
-        <p className="caption line-clamp-1 text-light-200">
+        <p className="caption line-clamp-1 text-light-200 dark:text-light-200">
           Enviado por: {capitalizeFirstLetter(file.owner.fullName)}
         </p>
       </div>

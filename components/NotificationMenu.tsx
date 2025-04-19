@@ -16,7 +16,7 @@ export function NotificationMenu() {
       <DropdownMenuTrigger asChild>
         <Button
           type="button"
-          className="h-[45px] gap-2 rounded-lg bg-[#f0f0f0] px-5 text-[#333] shadow-drop-1 hover:bg-[#e0e0e0]"
+          className="h-[45px] gap-2 rounded-lg bg-[#f0f0f0] px-5 text-[#333] shadow-drop-1 hover:bg-[#e0e0e0] dark:border dark:border-white/20 dark:bg-zinc-900 dark:text-white"
         >
           <Bell className="size-6" />
         </Button>

@@ -1,3 +1,4 @@
+"use client";
 /* eslint-disable tailwindcss/no-custom-classname */
 import React, { useEffect, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -76,17 +77,17 @@ const Search = ({ closeModal }: { closeModal: () => void }) => {
         ref={inputRef}
         value={query}
         placeholder="Pesquisar arquivos..."
-        className="focus:border-blue-500 focus:ring-blue-300 placeholder:gray-500 w-full rounded-lg border border-black/10 bg-white/90 px-4 py-3 text-sm text-black shadow-inner outline-none transition duration-150 focus:ring-2"
+        className="focus:border-blue-500 focus:ring-blue-300 placeholder:gray-500 dark:focus:ring-blue-500 w-full rounded-lg border border-black/10 bg-white/90 px-4 py-3 text-sm text-black shadow-inner outline-none transition duration-150 focus:ring-2 dark:bg-zinc-900/80 dark:text-white"
         onChange={(e) => setQuery(e.target.value)}
       />
 
       {open && (
-        <ul className="mt-2 max-h-60 w-full overflow-auto rounded-lg bg-white/90 shadow-md ring-1 ring-black/5 backdrop-blur-md">
+        <ul className="mt-2 max-h-60 w-full overflow-auto rounded-lg bg-white/90 shadow-md ring-1 ring-black/5 backdrop-blur-md dark:bg-zinc-900/80">
           {results.length > 0 ? (
             results.map((file) => (
               <li
                 key={file.$id}
-                className="flex cursor-pointer items-center justify-between gap-2 px-4 py-3 transition-colors hover:bg-gray-100"
+                className="flex cursor-pointer items-center justify-between gap-2 px-4 py-3 transition-colors hover:bg-gray-100 dark:hover:bg-zinc-700"
                 onClick={() => handleClickItem(file)}
               >
                 <div className="flex items-center gap-3">
@@ -96,12 +97,16 @@ const Search = ({ closeModal }: { closeModal: () => void }) => {
                     url={file.url}
                     className="size-8 min-w-8"
                   />
-                  <p className="text-sm text-gray-800">{file.name}</p>
+                  <p className="text-sm text-gray-800 dark:text-gray-200">
+                    {file.name}
+                  </p>
                 </div>
               </li>
             ))
           ) : (
-            <p className="px-4 py-3 text-sm text-gray-500">Sem resultados.</p>
+            <p className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+              Sem resultados.
+            </p>
           )}
         </ul>
       )}

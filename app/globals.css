@@ -181,7 +181,7 @@
     @apply cursor-pointer !important;
   }
   .shad-dialog {
-    @apply w-[90%] max-w-[400px] rounded-[26px] px-6 py-8 !important;
+    @apply w-[90%] max-w-[450px] rounded-[26px] px-6 py-8 !important;
   }
   .shad-chart-title {
     @apply text-white !important;
@@ -202,7 +202,7 @@
 
   /* Root Layout */
   .main-content {
-    @apply remove-scrollbar h-full flex-1 overflow-auto bg-light-400 px-5 py-7 sm:mr-7 sm:rounded-[30px] md:mb-7 md:px-9 md:py-10 !important;
+    @apply remove-scrollbar h-full flex-1 overflow-auto bg-light-400 px-5 py-7 dark:bg-zinc-900 sm:mr-7 sm:rounded-[30px] md:mb-7 md:px-9 md:py-10 !important;
   }
 
   /* Dashboard */
@@ -265,7 +265,7 @@
     @apply font-medium text-brand-100 !important;
   }
   .modal-cancel-button {
-    @apply h-[52px] flex-1 rounded-full bg-white text-light-100 hover:bg-transparent !important;
+    @apply h-[52px] flex-1 rounded-full bg-white text-light-100 hover:bg-transparent dark:hover:bg-white/80 !important;
   }
   .modal-submit-button {
     @apply primary-btn !mx-0 h-[52px] w-full flex-1 !important;
@@ -273,7 +273,7 @@
 
   /* ActionsModalContent */
   .file-details-thumbnail {
-    @apply !mb-1 flex items-center gap-3 rounded-xl border border-light-200/40 bg-light-400/50 p-3 !important;
+    @apply !mb-1 flex items-center gap-3 rounded-xl border border-light-200/40 bg-light-400/50 p-3 dark:bg-zinc-900 !important;
   }
   .file-details-label {
     @apply body-2 w-[30%] text-light-100 !important;
@@ -311,7 +311,7 @@
 
   /* Card */
   .file-card {
-    @apply flex cursor-pointer flex-col gap-6 rounded-[18px] bg-white p-5 shadow-sm transition-all hover:shadow-drop-3 !important;
+    @apply flex cursor-pointer flex-col gap-6 rounded-[18px] bg-white p-5 shadow-sm transition-all hover:shadow-drop-3 dark:border dark:border-white/20 dark:bg-zinc-900 !important;
   }
   .file-card-details {
     @apply flex flex-col gap-2 text-light-100 !important;
@@ -342,7 +342,7 @@
 
   /* FileUploader */
   .uploader-button {
-    @apply h-[45px] gap-2 rounded-lg bg-[#f0f0f0] px-5 text-[#333] shadow-drop-1 hover:bg-[#e0e0e0] !important;
+    @apply h-[45px] gap-2 rounded-lg bg-[#f0f0f0] px-5 text-[#333] shadow-drop-1 hover:bg-[#e0e0e0] dark:bg-zinc-900 dark:text-white !important;
   }
   .uploader-preview-list {
     @apply fixed bottom-10 right-10 z-50 flex size-full h-fit max-w-[480px] flex-col gap-3 rounded-[20px] bg-white p-7 shadow-drop-3 !important;
@@ -437,7 +437,7 @@
 
   /* Sort */
   .sort-select {
-    @apply shad-no-focus h-11 w-full rounded-[8px] border-transparent bg-white !shadow-sm sm:w-[210px] !important;
+    @apply shad-no-focus h-11 w-full rounded-[8px] border-transparent bg-white !shadow-sm dark:border dark:border-white/20 dark:bg-zinc-900 sm:w-[210px] !important;
   }
   .sort-select-content {
     @apply !shadow-drop-3 !important;

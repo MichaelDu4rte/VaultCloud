@@ -143,9 +143,9 @@ const ActionsDropdown = ({ file }: { file: Models.Document }) => {
     if (!action) return null;
 
     return (
-      <DialogContent className="shad-dialog button">
+      <DialogContent className="shad-dialog button dark:bg-zinc-900/80 dark:text-white">
         <DialogHeader className="flex flex-col gap-3">
-          <DialogTitle className="text-center text-light-100">
+          <DialogTitle className="text-center text-light-100 dark:text-white">
             {translateLabel(action.value)}
           </DialogTitle>
 
@@ -154,6 +154,7 @@ const ActionsDropdown = ({ file }: { file: Models.Document }) => {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              className="dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
             />
           )}
 
@@ -171,10 +172,16 @@ const ActionsDropdown = ({ file }: { file: Models.Document }) => {
 
         {["rename", "share", "delete"].includes(action.value) && (
           <DialogFooter className="flex flex-col gap-3 md:flex-row">
-            <Button onClick={closeAllModals} className="modal-cancel-button">
+            <Button
+              onClick={closeAllModals}
+              className="modal-cancel-button dark:text-white"
+            >
               Cancelar
             </Button>
-            <Button onClick={handleActions} className="modal-submit-button">
+            <Button
+              onClick={handleActions}
+              className="modal-submit-button dark:text-white"
+            >
               {!isLoading ? (
                 translateLabel(action.value)
               ) : (
@@ -213,15 +220,15 @@ const ActionsDropdown = ({ file }: { file: Models.Document }) => {
             height={34}
           />
         </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuLabel className="max-w-[200px] truncate">
+        <DropdownMenuContent className="dark:bg-zinc-800">
+          <DropdownMenuLabel className="max-w-[200px] truncate dark:text-white">
             {file.name}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           {actionsDropdownItems.map((actionsItems) => (
             <DropdownMenuItem
               key={actionsItems.value}
-              className="shad-dropdown-item"
+              className="shad-dropdown-item dark:text-white"
               onClick={() => {
                 if (actionsItems.value === "download") return;
                 handleDropdownAction(actionsItems);

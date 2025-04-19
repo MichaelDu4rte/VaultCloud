@@ -66,7 +66,7 @@ export default function ProfilePage() {
 
     setAvatar(avatarUrl);
 
-    setIsSaving(false); // Finaliza o processo de salvamento
+    setIsSaving(false);
 
     toast({
       title: "Salvando alterações...",
@@ -75,12 +75,12 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="flex items-center justify-center bg-light-400 px-4 py-10">
-      <div className="w-full max-w-3xl rounded-2xl bg-white p-8 text-black shadow-xl">
+    <div className="flex items-center justify-center bg-light-400 px-4 py-10 dark:bg-zinc-900">
+      <div className="w-full max-w-3xl rounded-2xl bg-white p-8 text-black shadow-xl dark:border dark:border-white/20 dark:bg-zinc-900/80 dark:text-zinc-200">
         <h2 className="mb-6 text-3xl font-semibold">Editar Perfil</h2>
 
         <div className="flex flex-col items-center gap-10 md:flex-row md:items-start">
-          <div className="relative mb-6 flex size-40 items-center justify-center overflow-hidden rounded-full border-4 border-light-300 shadow-lg">
+          <div className="relative mb-6 flex size-40 items-center justify-center overflow-hidden rounded-full border-4 border-light-300 shadow-lg dark:border-white/20">
             <Image
               src={
                 avatar && avatar !== "" ? avatar : "/assets/images/avatar.png"
@@ -107,10 +107,10 @@ export default function ProfilePage() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="peer w-full border-b-2 border-light-300 bg-transparent pt-4 text-lg text-black placeholder-transparent outline-none focus:border-black"
+                className="peer w-full border-b-2 border-light-400 bg-transparent pt-4 text-lg text-black placeholder-transparent outline-none focus:border-black dark:text-zinc-400 dark:focus:border-white"
                 placeholder="Nome"
               />
-              <label className="absolute left-0 top-0 text-sm text-black transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-lg">
+              <label className="absolute left-0 top-0 text-sm text-black transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-lg dark:text-zinc-200">
                 Nome
               </label>
             </div>
@@ -120,10 +120,10 @@ export default function ProfilePage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="peer w-full border-b-2 border-light-300 bg-transparent pt-4 text-lg text-black placeholder-transparent outline-none focus:border-black"
+                className="peer w-full border-b-2 border-light-300 bg-transparent pt-4 text-lg text-black placeholder-transparent outline-none focus:border-black dark:text-zinc-400 dark:focus:border-white"
                 placeholder="Email"
               />
-              <label className="absolute left-0 top-0 text-sm text-black transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-lg">
+              <label className="absolute left-0 top-0 text-sm text-black transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-lg dark:text-zinc-200">
                 Email
               </label>
             </div>
