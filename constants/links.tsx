@@ -10,12 +10,12 @@ export const SIDENAV_ITEMS: SideNavItem[] = [
   },
   {
     title: "LI",
-    path: "/licencadeimportacao",
+    path: "/li",
     icon: <Icon icon="lucide:folder" width="24" height="24" />,
     submenu: true,
     subMenuItems: [
-      { title: "Controle de li", path: "/controledeli" },
-      { title: "Recebimento", path: "/recebimentoli" },
+      { title: "Controle de li", path: "/li/controledeli" },
+      { title: "Recebimento", path: "/li/recebimentodeli" },
     ],
   },
   {

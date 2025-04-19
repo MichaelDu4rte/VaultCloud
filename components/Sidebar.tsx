@@ -20,7 +20,7 @@ interface Props {
 
 const Sidebar = ({ fullName, avatar }: Props) => {
   return (
-    <div className="fixed hidden h-screen w-60 border-r border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900 md:flex">
+    <div className="fixed hidden h-screen w-52 border-r border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900 md:flex">
       <div className="flex size-full flex-col">
         {/* Topo - Logo */}
         <Link
