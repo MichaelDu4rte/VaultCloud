@@ -64,7 +64,7 @@ const OTPModal = ({
               className="otp-close-button"
             />
           </AlertDialogTitle>
-          <AlertDialogDescription className="subtitle-2 text-center text-light-100">
+          <AlertDialogDescription className="subtitle-2 text-center text-light-100 dark:text-light-200">
             Enviamos um código de verificação para{" "}
             <span className="pl-1 text-brand-100">{email}</span>
           </AlertDialogDescription>
@@ -106,7 +106,7 @@ const OTPModal = ({
               )}
             </AlertDialogAction>
 
-            <div className="subtitle-2 mt-2 text-center text-light-100">
+            <div className="subtitle-2 mt-2 text-center text-light-100 dark:text-light-200">
               Não recebeu o código?
               <Button
                 type="button"

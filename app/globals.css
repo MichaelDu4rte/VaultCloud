@@ -158,10 +158,10 @@
     @apply body-2 ml-4 text-red !important;
   }
   .shad-alert-dialog {
-    @apply max-w-[95%] space-y-4 rounded-xl bg-white px-4 py-10 outline-none sm:w-fit md:rounded-[30px] md:px-8 !important;
+    @apply max-w-[95%] space-y-4 rounded-xl bg-white px-4 py-10 outline-none dark:border-white/20 dark:bg-zinc-900 sm:w-fit md:rounded-[30px] md:px-8 !important;
   }
   .shad-submit-btn {
-    @apply button rounded-full bg-brand transition-all hover:bg-brand-100 !important;
+    @apply button rounded-full bg-brand transition-all hover:bg-brand-100 dark:text-white !important;
   }
   .shad-otp {
     @apply flex w-full justify-between gap-1 sm:gap-2 !important;
@@ -300,10 +300,10 @@
     @apply flex max-h-[800px] w-full max-w-[580px] flex-col justify-center space-y-6 transition-all lg:h-full lg:space-y-8 !important;
   }
   .form-title {
-    @apply h1 text-center text-light-100 md:text-left !important;
+    @apply h1 text-center text-light-100 dark:text-white md:text-left !important;
   }
   .form-submit-button {
-    @apply primary-btn h-[66px] !important;
+    @apply primary-btn h-[66px] dark:text-white !important;
   }
   .error-message {
     @apply body-2 mx-auto w-fit rounded-xl bg-error/5 px-8 py-4 text-center text-error !important;

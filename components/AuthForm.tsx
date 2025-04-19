@@ -14,7 +14,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import Link from "next/link";
 import { createAccount, signInUser } from "@/lib/actions/user.actions";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -157,7 +156,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
             )}
           </Button>
 
-          <div className="body-2 flex justify-center">
+          {/* <div className="body-2 flex justify-center">
             <p className="text-light-100">
               {type === "sign-in" ? "Não tem uma conta?" : "Já tem uma conta?"}
             </p>
@@ -167,7 +166,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
             >
               {type === "sign-in" ? "Criar conta" : "Fazer login"}
             </Link>
-          </div>
+          </div> */}
         </form>
       </Form>
 
