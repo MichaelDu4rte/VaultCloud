@@ -66,12 +66,15 @@ export const getFileType = (fileName: string) => {
   const imageExtensions = ["jpg", "jpeg", "png", "gif", "bmp", "svg", "webp"];
   const videoExtensions = ["mp4", "avi", "mov", "mkv", "webm"];
   const audioExtensions = ["mp3", "wav", "ogg", "flac"];
+  const certificationxtensions = ["p12"];
 
   if (documentExtensions.includes(extension))
     return { type: "document", extension };
   if (imageExtensions.includes(extension)) return { type: "image", extension };
   if (videoExtensions.includes(extension)) return { type: "video", extension };
   if (audioExtensions.includes(extension)) return { type: "audio", extension };
+  if (certificationxtensions.includes(extension))
+    return { type: "certificados", extension };
 
   return { type: "other", extension };
 };
@@ -161,6 +164,8 @@ export const getFileIcon = (
       switch (type) {
         case "image":
           return "/assets/icons/file-image.svg";
+        case "certificados":
+          return "/assets/icons/file-document.svg";
         case "document":
           return "/assets/icons/file-document.svg";
         case "video":
@@ -194,6 +199,13 @@ export const getUsageSummary = (totalSpace: any) => {
       url: "/documents",
     },
     {
+      title: "Certificados",
+      size: totalSpace.certification.size,
+      latestDate: totalSpace.certification.latestDate,
+      icon: "/assets/icons/file-document-light.svg",
+      url: "/certification",
+    },
+    {
       title: "Images",
       size: totalSpace.image.size,
       latestDate: totalSpace.image.latestDate,
@@ -224,6 +236,8 @@ export const getFileTypesParams = (type: string) => {
   switch (type) {
     case "documents":
       return ["document"];
+    case "certificados":
+      return ["certificados"];
     case "images":
       return ["image"];
     case "media":

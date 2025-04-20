@@ -28,7 +28,7 @@ const Sidebar = ({ fullName, avatar }: Props) => {
           className="flex h-16 items-center space-x-3 border-b border-zinc-200 px-6 dark:border-zinc-700"
         >
           <Image src="/brand.png" alt="" width={40} height={40} />
-          <span className="text-xl font-semibold tracking-tight dark:text-white">
+          <span className="text-lg font-semibold tracking-tight dark:text-white">
             VaultCloud
           </span>
         </Link>
@@ -94,7 +94,7 @@ const MenuItem = ({ item }: { item: SideNavItem }) => {
         <>
           <button
             onClick={toggleSubMenu}
-            className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-zinc-700 transition-all hover:bg-zinc-100 hover:shadow-sm dark:text-zinc-100 dark:hover:bg-zinc-800 ${
+            className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-[0.8rem] text-zinc-700 transition-all hover:bg-zinc-100 hover:shadow-sm dark:text-zinc-100 dark:hover:bg-zinc-800 ${
               isActive ? "bg-zinc-100 font-semibold dark:bg-zinc-800" : ""
             }`}
           >

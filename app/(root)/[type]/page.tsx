@@ -17,16 +17,15 @@ const page = async ({ searchParams, params }: SearchParamProps) => {
   return (
     <div className="page-container dark:bg-zinc-900/80 dark:text-white">
       <section className="w-full">
-        <h1 className="h1 capitalize">{type}</h1>
-
+        <h1 className="h1 capitalize">
+          {type === "certificados" ? "Certificados Digitais" : type}
+        </h1>
         <div className="total-size-section">
-          <p className="body-1">
-            Total: <span className="h5">0MB</span>
-          </p>
+          <p className="body-1"></p>
 
           <div className="sort-container">
             <p className="body-1 hidden text-light-200 dark:text-light-300 sm:block">
-              Sort By:{" "}
+              Filtrar por:
             </p>
             <Sort />
           </div>

@@ -11,7 +11,7 @@ export const SIDENAV_ITEMS: SideNavItem[] = [
   {
     title: "LI",
     path: "/li",
-    icon: <Icon icon="lucide:folder" width="24" height="24" />,
+    icon: <Icon icon="lucide:file-cog" width="24" height="24" />,
     submenu: true,
     subMenuItems: [
       { title: "Controle de li", path: "/li/controledeli" },
@@ -19,9 +19,9 @@ export const SIDENAV_ITEMS: SideNavItem[] = [
     ],
   },
   {
-    title: "Images",
-    path: "/images",
-    icon: <Icon icon="lucide:mail" width="24" height="24" />,
+    title: "Certificados",
+    path: "/certificados",
+    icon: <Icon icon="lucide:shield-check" width="24" height="24" />,
   },
   {
     title: "Configurações",
