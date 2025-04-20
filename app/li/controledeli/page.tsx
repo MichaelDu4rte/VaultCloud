@@ -52,7 +52,7 @@ const Page = () => {
     imp: "",
     importador: "",
     referenciaDoCliente: "",
-    numeroOrquestra: "",
+    numeroOrquestra: 0,
     numeroLi: "",
     ncm: "",
     dataRegistroLI: "",
@@ -188,7 +188,7 @@ const Page = () => {
         imp: "",
         importador: "",
         referenciaDoCliente: "",
-        numeroOrquestra: "",
+        numeroOrquestra: 0,
         numeroLi: "",
         ncm: "",
         dataRegistroLI: "",
@@ -300,9 +300,12 @@ const Page = () => {
               />
               <Input
                 placeholder="Número do Orquestra"
-                value={form.numeroOrquestra}
+                value={form.numeroOrquestra.toString()}
                 onChange={(e) =>
-                  setForm({ ...form, numeroOrquestra: e.target.value })
+                  setForm({
+                    ...form,
+                    numeroOrquestra: parseInt(e.target.value, 10) || 0,
+                  })
                 }
                 className="w-full"
               />
