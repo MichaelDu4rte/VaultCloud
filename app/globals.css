@@ -345,7 +345,7 @@
     @apply h-[45px] gap-2 rounded-lg bg-[#f0f0f0] px-5 text-[#333] shadow-drop-1 hover:bg-[#e0e0e0] dark:bg-zinc-900 dark:text-white !important;
   }
   .uploader-preview-list {
-    @apply fixed bottom-10 right-10 z-50 flex size-full h-fit max-w-[480px] flex-col gap-3 rounded-[20px] bg-white p-7 shadow-drop-3 !important;
+    @apply fixed bottom-10 right-10 z-50 flex size-full h-fit max-w-[480px] flex-col gap-3 rounded-[20px] bg-white p-7 shadow-drop-3 dark:border dark:border-white/20 dark:bg-zinc-900/80 dark:text-white !important;
   }
   .uploader-preview-item {
     @apply flex items-center justify-between gap-3 rounded-xl p-3 shadow-drop-3 !important;

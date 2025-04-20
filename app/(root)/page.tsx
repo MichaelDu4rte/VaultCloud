@@ -193,22 +193,19 @@ const Home = () => {
   };
 
   return (
-    <div className="min-h-screen space-y-6 bg-gradient-to-br from-gray-50 to-white p-6 text-sm">
+    <div className="min-h-screen space-y-6 bg-gradient-to-br p-6 text-sm dark:bg-zinc-900">
       {/* Top Section */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <motion.div
           variants={fadeIn}
           initial="hidden"
           animate="visible"
-          className="col-span-2 rounded-2xl bg-white p-5 shadow-lg transition-all hover:shadow-xl"
+          className="col-span-2 rounded-2xl p-5 shadow-lg transition-all hover:shadow-xl dark:border dark:border-white/20 dark:bg-zinc-900/80 dark:text-white"
         >
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-800">
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-800 dark:text-white">
               📈 Sales Overview
             </h2>
-            <select className="rounded border border-gray-200 bg-gray-100 px-2 py-1 text-xs">
-              <option>Março 2023</option>
-            </select>
           </div>
           <div className="h-64 w-full">
             {" "}
@@ -221,10 +218,12 @@ const Home = () => {
             variants={fadeIn}
             initial="hidden"
             animate="visible"
-            className="flex items-center justify-between rounded-2xl p-4 shadow-md transition hover:shadow-lg"
+            className="flex items-center justify-between rounded-2xl p-4 shadow-md transition hover:shadow-lg dark:border dark:border-white/20 dark:bg-zinc-900/80 dark:text-white"
           >
             <div>
-              <p className="text-xs text-gray-500">LIÇÕES FEITAS NO MÊS</p>
+              <p className="text-xs text-gray-500 dark:text-light-200">
+                Lis FEITAS NO MÊS
+              </p>
               <h3 className="text-xl font-bold">{quantidadeLicencas}</h3>
             </div>
             <div className="text-3xl text-blue">
@@ -236,10 +235,12 @@ const Home = () => {
             variants={fadeIn}
             initial="hidden"
             animate="visible"
-            className="flex items-center justify-between rounded-2xl p-4 shadow-md transition hover:shadow-lg"
+            className="flex items-center justify-between rounded-2xl p-4 shadow-md transition hover:shadow-lg dark:border dark:border-white/20 dark:bg-zinc-900/80"
           >
             <div>
-              <p className="text-xs text-gray-500">LIÇÕES A DEFERIR</p>
+              <p className="text-xs text-gray-500 dark:text-light-200">
+                LIS A DEFERIR
+              </p>
               <h3 className="text-xl font-bold">
                 {quantidadeLicencasEmAnalise}
               </h3>
@@ -253,10 +254,12 @@ const Home = () => {
             variants={fadeIn}
             initial="hidden"
             animate="visible"
-            className="flex items-center justify-between rounded-2xl p-4 shadow-md transition hover:shadow-lg"
+            className="flex items-center justify-between rounded-2xl p-4 shadow-md transition hover:shadow-lg dark:border dark:border-white/20 dark:bg-zinc-900/80"
           >
             <div>
-              <p className="text-xs text-gray-500">LIÇÕES DEFERIDAS</p>
+              <p className="text-xs text-gray-500 dark:text-light-200">
+                LIS DEFERIDAS
+              </p>
               <h3 className="text-xl font-bold">
                 {quantidadeLicencasDeferidas}
               </h3>
@@ -273,14 +276,14 @@ const Home = () => {
         variants={fadeIn}
         initial="hidden"
         animate="visible"
-        className="rounded-2xl bg-white p-6 shadow-lg transition hover:shadow-2xl"
+        className="rounded-2xl bg-white p-6 shadow-lg transition hover:shadow-2xl dark:border dark:border-white/20 dark:bg-zinc-900/80 dark:text-white"
       >
         <div className="mb-4">
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-800">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-800 dark:text-white">
             <DocumentTextIcon className="size-6 text-indigo-500" />
             Licenças de Importação Próximas de Deferimento
           </h2>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-light-200">
             Abaixo estão listadas as Licenças de Importação que estão previstas
             para deferimento hoje ou em breve.
           </p>
@@ -288,7 +291,7 @@ const Home = () => {
         <div className="overflow-auto">
           <table className="w-full min-w-[700px] text-left text-sm">
             <thead>
-              <tr className="border-b border-gray-200 text-gray-500">
+              <tr className="border-b border-gray-200 text-gray-500 dark:text-light-200">
                 <th className="pb-3">IMP</th>
                 <th>Importador</th>
                 <th>Número da LI</th>
@@ -303,15 +306,21 @@ const Home = () => {
                   variants={fadeIn}
                   initial="hidden"
                   animate="visible"
-                  className="border-b border-gray-100 hover:bg-gray-50"
+                  className="border-b border-gray-100 hover:bg-gray-50 dark:hover:bg-zinc-900"
                 >
-                  <td className="py-3 font-medium text-gray-800">{item.imp}</td>
-                  <td className="py-3 text-gray-700">{item.importador}</td>
-                  <td className="py-3 text-gray-700">{item.numeroLi}</td>
+                  <td className="py-3 font-medium text-gray-800 dark:text-light-300">
+                    {item.imp}
+                  </td>
+                  <td className="py-3 text-gray-700 dark:text-light-300">
+                    {item.importador}
+                  </td>
+                  <td className="py-3 text-gray-700 dark:text-light-300">
+                    {item.numeroLi}
+                  </td>
                   <td className="py-3 uppercase">
                     {statusBadge(item.situacao)}
                   </td>
-                  <td className="py-3 text-gray-500">
+                  <td className="py-3 text-gray-500 dark:text-light-300">
                     {item.previsaoDeferimento}
                   </td>
                 </motion.tr>
