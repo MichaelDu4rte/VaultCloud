@@ -247,6 +247,14 @@ const Page = () => {
     XLSX.writeFile(workbook, "licencas-importacao.xlsx");
   };
 
+  const getSituacaoColor = (situacao: string) => {
+    const normalized = situacao.toLowerCase();
+    if (normalized === "deferida") return "text-green font-semibold";
+    if (normalized === "indeferida" || normalized === "cancelada")
+      return "text-red font-semibold";
+    return "text-gray dark:text-white"; // em análise ou outros
+  };
+
   return (
     <div className="space-y-10 rounded-2xl bg-white p-8 shadow-md dark:border dark:border-white/20 dark:bg-zinc-900/80">
       <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:gap-0">
@@ -478,14 +486,20 @@ const Page = () => {
                   />
                 </TableCell>
                 <TableCell>
-                  <Input
+                  <select
+                    className={`${getSituacaoColor(item.situacao)} rounded border border-gray-300 bg-transparent px-2 py-1 dark:border-white/20 dark:bg-zinc-900`}
                     value={item.situacao}
                     onChange={(e) =>
                       handleChange("situacao", e.target.value, index)
                     }
-                    className="w-full"
-                  />
+                  >
+                    <option value="em análise">Em análise</option>
+                    <option value="cancelada">Cancelada</option>
+                    <option value="deferida">Deferida</option>
+                    <option value="indeferida">Indeferida</option>
+                  </select>
                 </TableCell>
+
                 <TableCell>
                   <Textarea
                     value={item.observacoes}

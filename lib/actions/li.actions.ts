@@ -319,3 +319,40 @@ export const getQuantidadeLicencasImportacaoDeferidasNoMes = async () => {
     throw error;
   }
 };
+
+export const getImpsComLIsDeferindoHoje = async () => {
+  try {
+    const { databases } = await createAdminClient();
+
+    const formatarData = (data: Date) => {
+      return `${data.getDate().toString().padStart(2, "0")}/${(
+        data.getMonth() + 1
+      )
+        .toString()
+        .padStart(2, "0")}/${data.getFullYear()}`;
+    };
+
+    const hoje = new Date();
+    const dataDeHoje = formatarData(hoje);
+
+    const result = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.licencaImportacaoCollectionId,
+      [Query.equal("previsaoDeferimento", dataDeHoje), Query.limit(1000)]
+    );
+
+    if (result.total > 0) {
+      const impsComLIsDeferindoHoje = result.documents.map((doc) => ({
+        imp: doc.imp,
+        importador: doc.importador,
+      }));
+
+      return impsComLIsDeferindoHoje;
+    }
+
+    return [];
+  } catch (error) {
+    console.error("Erro ao buscar imps com LIs deferindo hoje:", error);
+    throw error;
+  }
+};

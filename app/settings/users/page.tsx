@@ -170,7 +170,7 @@ export default function UsersPage() {
                     <TableCell className="font-medium text-zinc-800 dark:text-zinc-200">
                       {user.name.charAt(0).toUpperCase() + user.name.slice(1)}
                     </TableCell>
-                    <TableCell className="text-zinc-200 dark:text-zinc-200">
+                    <TableCell className="font-medium text-zinc-800 dark:text-zinc-200">
                       {user.email}
                     </TableCell>
                     <TableCell className="text-right">
