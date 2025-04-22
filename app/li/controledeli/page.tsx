@@ -153,46 +153,30 @@ const Page = () => {
       });
   };
 
- const handleChange = (field: string, value: string, index: number) => {
-  const updatedData = [...(data || [])];
-  const targetIMP = updatedData[index].imp; // Identificar a IMP que está sendo alterada
-
-  if (field === "situacao" && targetIMP) {
-    // Atualizar todas as ocorrências da mesma IMP
-    updatedData.forEach((item, i) => {
-      if (item.imp === targetIMP) {
-        updatedData[i] = { ...item, [field]: value };
-      }
-    });
-  } else {
-    // Atualizar apenas o item específico
+  const handleChange = (field: string, value: string, index: number) => {
+    const updatedData = [...(data || [])];
     updatedData[index] = { ...updatedData[index], [field]: value };
-  }
+    setData(updatedData);
 
-  setData(updatedData);
+    const id = updatedData[index].$id;
 
-  // Atualizar o backend para todas as ocorrências (se necessário)
-  const idsToUpdate = updatedData
-    .filter((item) => item.imp === targetIMP)
-    .map((item) => item.$id);
+    const {
+      $id,
+      $databaseId,
+      $collectionId,
+      $createdAt,
+      $updatedAt,
+      ...dataToUpdate
+    } = updatedData[index];
 
-  Promise.all(
-    idsToUpdate.map((id) => {
-      const {
-        $id,
-        $databaseId,
-        $collectionId,
-        $createdAt,
-        $updatedAt,
-        ...dataToUpdate
-      } = updatedData.find((item) => item.$id === id)!;
-
-      return updateLicencaImportacao(id, dataToUpdate);
-    })
-  )
-    .then(() => console.log("Todas as ocorrências atualizadas com sucesso"))
-    .catch((err) => console.error("Erro ao atualizar as ocorrências:", err));
-};
+    updateLicencaImportacao(id, dataToUpdate)
+      .then((updated) => {
+        console.log("Licença de Importação atualizada:", updated);
+      })
+      .catch((err) => {
+        console.error("Erro ao atualizar Licença de Importação:", err);
+      });
+  };
 
   const handleAdd = async () => {
     try {
