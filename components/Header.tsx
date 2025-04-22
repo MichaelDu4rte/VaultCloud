@@ -37,7 +37,7 @@ const Header = ({
   }, []);
 
   return (
-    <header className="header flex h-16 w-full items-center justify-end border-b bg-background dark:bg-zinc-900">
+    <header className="header flex h-16 w-full items-center justify-end border-b bg-background px-10 dark:bg-zinc-900">
       <div className="flex items-center gap-3 px-5">
         <button
           onClick={toggleSearchModal}

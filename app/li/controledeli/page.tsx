@@ -30,12 +30,32 @@ import {
   getLicencasImportacao,
   updateLicencaImportacao,
 } from "@/lib/actions/li.actions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const formatarDataBrasileira = (data: string) => {
   if (!data) return "";
   const partes = data.split("-");
   if (partes.length !== 3) return data;
   return `${partes[2]}/${partes[1]}/${partes[0]}`;
+};
+
+const setCookie = (name: string, value: string, days: number) => {
+  const date = new Date();
+  date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+  document.cookie = `${name}=${value}; expires=${date.toUTCString()}; path=/`;
+};
+
+const getCookie = (name: string): string | null => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(";").shift() || null;
+  return null;
 };
 
 const formatarDataInternacional = (data: string) => {
@@ -84,13 +104,13 @@ const Page = () => {
           ),
           previsaoDeferimento: formatarDataBrasileira(item.previsaoDeferimento),
         }));
-        setData(formatadas); // Atualiza o estado com os dados mais recentes do DB
+        setData(formatadas);
       } catch (error) {
         console.error("Erro ao buscar Licenças de Importação:", error);
       }
     };
     fetchLicencas();
-  }, []); // A dependência vazia garante que a chamada ocorra apenas no carregamento inicial
+  }, []);
 
   const handleDuplicate = (index: number) => {
     const original = data![index];
@@ -252,7 +272,42 @@ const Page = () => {
     if (normalized === "deferida") return "text-green font-semibold";
     if (normalized === "indeferida" || normalized === "cancelada")
       return "text-red font-semibold";
-    return "text-gray dark:text-white"; // em análise ou outros
+    return "text-gray dark:text-white";
+  };
+
+  const [colunasVisiveis, setColunasVisiveis] = useState(() => {
+    const savedColumns = getCookie("colunasVisiveis");
+    if (savedColumns) {
+      return JSON.parse(savedColumns);
+    } else {
+      return {
+        imp: true,
+        importador: true,
+        referenciaDoCliente: true,
+        numeroOrquestra: true,
+        numeroLi: true,
+        ncm: true,
+        dataRegistroLI: true,
+        dataInclusaoOrquestra: true,
+        previsaoDeferimento: true,
+        situacao: true,
+        observacoes: true,
+      };
+    }
+  });
+
+  const handleColumnToggle = (coluna: string) => {
+    setColunasVisiveis((prev: typeof colunasVisiveis) => {
+      const updatedColunas = {
+        ...prev,
+        [coluna]: !prev[coluna],
+      };
+
+      // Salvar no cookie
+      setCookie("colunasVisiveis", JSON.stringify(updatedColunas), 365);
+
+      return updatedColunas;
+    });
   };
 
   return (
@@ -265,12 +320,44 @@ const Page = () => {
           <p className="text-sm text-muted-foreground">
             Visualize e gerencie as LIs registradas.
           </p>
+
           <Input
             placeholder="Buscar por IMP, importador ou referência"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="mb-5 mt-4 w-full md:w-96"
+            className="mb-5 mt-4 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary dark:border-white/30 dark:bg-zinc-900 md:w-96"
           />
+
+          <div className="mb-5">
+            <Select
+              value=""
+              onValueChange={(selectedOption) => {
+                handleColumnToggle(selectedOption);
+              }}
+            >
+              <SelectTrigger className="w-full rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-primary dark:border-white/30 dark:bg-zinc-900 md:w-96">
+                <SelectValue placeholder="Colunas:" />
+              </SelectTrigger>
+              <SelectContent className="">
+                {Object.keys(colunasVisiveis).map((coluna) => (
+                  <SelectItem key={coluna} value={coluna}>
+                    <div className="flex w-full items-center justify-between capitalize">
+                      <input
+                        type="checkbox"
+                        checked={colunasVisiveis[coluna]}
+                        onChange={() => handleColumnToggle(coluna)}
+                        className="mr-5 size-5"
+                      />
+                      <span className="capitalize">
+                        {coluna.replace(/([A-Z])/g, " $1").trim()}
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <Button onClick={exportarParaExcel}>Exportar para Excel</Button>
         </div>
 
@@ -386,129 +473,170 @@ const Page = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>IMP</TableHead>
-              <TableHead>Importador</TableHead>
-              <TableHead>Referência</TableHead>
-              <TableHead>Nº Orquestra</TableHead>
-              <TableHead>Numero LI</TableHead>
-              <TableHead>NCM</TableHead>
-              <TableHead>Registro LI</TableHead>
-              <TableHead>Data Pagamento</TableHead>
-              <TableHead>Previsão Deferimento</TableHead>
-              <TableHead>Situação</TableHead>
-              <TableHead>Observações</TableHead>
+              {colunasVisiveis.imp && <TableHead>IMP</TableHead>}
+              {colunasVisiveis.importador && <TableHead>Importador</TableHead>}
+              {colunasVisiveis.referenciaDoCliente && (
+                <TableHead>Referência</TableHead>
+              )}
+              {colunasVisiveis.numeroOrquestra && (
+                <TableHead>Nº Orquestra</TableHead>
+              )}
+              {colunasVisiveis.numeroLi && <TableHead>Numero LI</TableHead>}
+              {colunasVisiveis.ncm && <TableHead>NCM</TableHead>}
+              {colunasVisiveis.dataRegistroLI && (
+                <TableHead>Registro LI</TableHead>
+              )}
+              {colunasVisiveis.dataInclusaoOrquestra && (
+                <TableHead>Data Pagamento</TableHead>
+              )}
+              {colunasVisiveis.previsaoDeferimento && (
+                <TableHead>Previsão Deferimento</TableHead>
+              )}
+              {colunasVisiveis.situacao && <TableHead>Situação</TableHead>}
+              {colunasVisiveis.observacoes && (
+                <TableHead>Observações</TableHead>
+              )}
               <TableHead>Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredData.map((item, index) => (
               <TableRow key={index}>
-                <TableCell>
-                  <Input
-                    value={item.imp}
-                    onChange={(e) => handleChange("imp", e.target.value, index)}
-                    className="w-full sm:w-[120px]"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Input
-                    value={item.importador}
-                    onChange={(e) =>
-                      handleChange("importador", e.target.value, index)
-                    }
-                    className="w-full sm:w-[120px]"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Input
-                    value={item.referenciaDoCliente}
-                    onChange={(e) =>
-                      handleChange("referenciaDoCliente", e.target.value, index)
-                    }
-                    className="w-full"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Input
-                    value={item.numeroOrquestra}
-                    onChange={(e) =>
-                      handleChange("numeroOrquestra", e.target.value, index)
-                    }
-                    className="w-full"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Input
-                    value={item.numeroLi}
-                    onChange={(e) =>
-                      handleChange("numeroLi", e.target.value, index)
-                    }
-                    className="w-full"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Input
-                    value={item.ncm}
-                    onChange={(e) => handleChange("ncm", e.target.value, index)}
-                    className="w-full"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Input
-                    type="text"
-                    value={item.dataRegistroLI}
-                    onChange={(e) =>
-                      handleChange("dataRegistroLI", e.target.value, index)
-                    }
-                    className="w-full"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Input
-                    type="text"
-                    value={item.dataInclusaoOrquestra}
-                    onChange={(e) =>
-                      handleChange(
-                        "dataInclusaoOrquestra",
-                        e.target.value,
-                        index
-                      )
-                    }
-                    className="w-full"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Input
-                    type="text"
-                    value={item.previsaoDeferimento}
-                    readOnly
-                    className="w-full"
-                  />
-                </TableCell>
-                <TableCell>
-                  <select
-                    className={`${getSituacaoColor(item.situacao)} rounded border border-gray-300 bg-transparent px-2 py-1 dark:border-white/20 dark:bg-zinc-900`}
-                    value={item.situacao}
-                    onChange={(e) =>
-                      handleChange("situacao", e.target.value, index)
-                    }
-                  >
-                    <option value="em análise">Em análise</option>
-                    <option value="cancelada">Cancelada</option>
-                    <option value="deferida">Deferida</option>
-                    <option value="indeferida">Indeferida</option>
-                  </select>
-                </TableCell>
-
-                <TableCell>
-                  <Textarea
-                    value={item.observacoes}
-                    onChange={(e) =>
-                      handleChange("observacoes", e.target.value, index)
-                    }
-                    className="w-full"
-                  />
-                </TableCell>
+                {colunasVisiveis.imp && (
+                  <TableCell>
+                    <Input
+                      value={item.imp}
+                      onChange={(e) =>
+                        handleChange("imp", e.target.value, index)
+                      }
+                      className="w-full sm:w-[120px]"
+                    />
+                  </TableCell>
+                )}
+                {colunasVisiveis.importador && (
+                  <TableCell>
+                    <Input
+                      value={item.importador}
+                      onChange={(e) =>
+                        handleChange("importador", e.target.value, index)
+                      }
+                      className="w-full sm:w-[120px]"
+                    />
+                  </TableCell>
+                )}
+                {colunasVisiveis.referenciaDoCliente && (
+                  <TableCell>
+                    <Input
+                      value={item.referenciaDoCliente}
+                      onChange={(e) =>
+                        handleChange(
+                          "referenciaDoCliente",
+                          e.target.value,
+                          index
+                        )
+                      }
+                      className="w-full"
+                    />
+                  </TableCell>
+                )}
+                {colunasVisiveis.numeroOrquestra && (
+                  <TableCell>
+                    <Input
+                      value={item.numeroOrquestra}
+                      onChange={(e) =>
+                        handleChange("numeroOrquestra", e.target.value, index)
+                      }
+                      className="w-full"
+                    />
+                  </TableCell>
+                )}
+                {colunasVisiveis.numeroLi && (
+                  <TableCell>
+                    <Input
+                      value={item.numeroLi}
+                      onChange={(e) =>
+                        handleChange("numeroLi", e.target.value, index)
+                      }
+                      className="w-full"
+                    />
+                  </TableCell>
+                )}
+                {colunasVisiveis.ncm && (
+                  <TableCell>
+                    <Input
+                      value={item.ncm}
+                      onChange={(e) =>
+                        handleChange("ncm", e.target.value, index)
+                      }
+                      className="w-full"
+                    />
+                  </TableCell>
+                )}
+                {colunasVisiveis.dataRegistroLI && (
+                  <TableCell>
+                    <Input
+                      type="text"
+                      value={item.dataRegistroLI}
+                      onChange={(e) =>
+                        handleChange("dataRegistroLI", e.target.value, index)
+                      }
+                      className="w-full"
+                    />
+                  </TableCell>
+                )}
+                {colunasVisiveis.dataInclusaoOrquestra && (
+                  <TableCell>
+                    <Input
+                      type="text"
+                      value={item.dataInclusaoOrquestra}
+                      onChange={(e) =>
+                        handleChange(
+                          "dataInclusaoOrquestra",
+                          e.target.value,
+                          index
+                        )
+                      }
+                      className="w-full"
+                    />
+                  </TableCell>
+                )}
+                {colunasVisiveis.previsaoDeferimento && (
+                  <TableCell>
+                    <Input
+                      type="text"
+                      value={item.previsaoDeferimento}
+                      readOnly
+                      className="w-full"
+                    />
+                  </TableCell>
+                )}
+                {colunasVisiveis.situacao && (
+                  <TableCell>
+                    <select
+                      className={`${getSituacaoColor(item.situacao)} rounded border border-gray-300 bg-transparent px-2 py-1 dark:border-white/20 dark:bg-zinc-900`}
+                      value={item.situacao}
+                      onChange={(e) =>
+                        handleChange("situacao", e.target.value, index)
+                      }
+                    >
+                      <option value="em análise">Em análise</option>
+                      <option value="cancelada">Cancelada</option>
+                      <option value="deferida">Deferida</option>
+                      <option value="indeferida">Indeferida</option>
+                    </select>
+                  </TableCell>
+                )}
+                {colunasVisiveis.observacoes && (
+                  <TableCell>
+                    <Textarea
+                      value={item.observacoes}
+                      onChange={(e) =>
+                        handleChange("observacoes", e.target.value, index)
+                      }
+                      className="w-full"
+                    />
+                  </TableCell>
+                )}
                 <TableCell>
                   <div className="flex gap-2">
                     <Button

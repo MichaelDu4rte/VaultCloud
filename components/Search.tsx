@@ -65,7 +65,10 @@ const Search = ({ closeModal }: { closeModal: () => void }) => {
     const typePath =
       file.type === "video" || file.type === "audio"
         ? "media"
-        : `${file.type}s`;
+        : file.type === "certificados"
+          ? "certificados"
+          : `${file.type}s`;
+
     router.push(`/${typePath}?query=${query}`);
 
     closeModal();
