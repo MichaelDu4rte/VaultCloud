@@ -25,17 +25,38 @@ export function NotificationMenu() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
+  const init = async () => {
     const stored = Cookies.get(COOKIE_KEY);
+    let existing: Notification[] = [];
     if (stored) {
-      setNotifications(JSON.parse(stored));
-    } else {
-      fetchNotifications();
+      existing = JSON.parse(stored);
     }
-  }, []);
 
-  useEffect(() => {
-    Cookies.set(COOKIE_KEY, JSON.stringify(notifications), { expires: 7 });
-  }, [notifications]);
+    try {
+      const imps = await getImpsComLIsDeferindoHoje();
+      const fetched = imps.map((item, idx) => ({
+        id: `${item.imp}-${idx}`,
+        imp: item.imp,
+        importador: item.importador,
+        lida: false,
+      }));
+
+      // evita duplicatas
+      const merged = [
+        ...fetched.filter((f) => !existing.some((e) => e.id === f.id)),
+        ...existing,
+      ];
+
+      setNotifications(merged);
+    } catch (error) {
+      console.error("Erro ao carregar notificações:", error);
+      setNotifications(existing); // fallback pro cookie
+    }
+  };
+
+  init();
+}, []);
+
 
   const fetchNotifications = async () => {
     try {
