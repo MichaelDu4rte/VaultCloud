@@ -25,68 +25,64 @@ export function NotificationMenu() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
-  const init = async () => {
-    const stored = Cookies.get(COOKIE_KEY);
-    let existing: Notification[] = [];
-    if (stored) {
-      existing = JSON.parse(stored);
-    }
+    const init = async () => {
+      const stored = Cookies.get(COOKIE_KEY);
+      let existing: Notification[] = [];
+      if (stored) {
+        existing = JSON.parse(stored);
+      }
 
-    try {
-      const imps = await getImpsComLIsDeferindoHoje();
-      const fetched = imps.map((item, idx) => ({
-        id: `${item.imp}-${idx}`,
-        imp: item.imp,
-        importador: item.importador,
-        lida: false,
-      }));
+      try {
+        const imps = await getImpsComLIsDeferindoHoje();
+        const fetched = imps.map((item, idx) => ({
+          id: `${item.imp}-${idx}`,
+          imp: item.imp,
+          importador: item.importador,
+          lida: false,
+        }));
 
-      // evita duplicatas
-      const merged = [
-        ...fetched.filter((f) => !existing.some((e) => e.id === f.id)),
-        ...existing,
-      ];
+        const merged = [
+          ...fetched.filter((f) => !existing.some((e) => e.id === f.id)),
+          ...existing,
+        ];
 
-      setNotifications(merged);
-    } catch (error) {
-      console.error("Erro ao carregar notificações:", error);
-      setNotifications(existing); // fallback pro cookie
-    }
-  };
+        setNotifications(merged);
+        Cookies.set(COOKIE_KEY, JSON.stringify(merged));
+      } catch (error) {
+        console.error("Erro ao carregar notificações:", error);
+        setNotifications(existing);
+      }
+    };
 
-  init();
-}, []);
-
-
-  const fetchNotifications = async () => {
-    try {
-      const imps = await getImpsComLIsDeferindoHoje();
-      const formatted = imps.map((item, idx) => ({
-        id: `${item.imp}-${idx}`,
-        imp: item.imp,
-        importador: item.importador,
-        lida: false,
-      }));
-      setNotifications(formatted);
-    } catch (error) {
-      console.error("Erro ao carregar notificações:", error);
-    }
-  };
+    init();
+  }, []);
 
   const unreadCount = notifications.filter((n) => !n.lida).length;
 
-  const markAllAsRead = () =>
-    setNotifications((prev) => prev.map((n) => ({ ...n, lida: true })));
+  const markAllAsRead = () => {
+    const novas = notifications.map((n) => ({ ...n, lida: true }));
+    setNotifications(novas);
+    Cookies.set(COOKIE_KEY, JSON.stringify(novas));
+  };
 
-  const clearAll = () => setNotifications([]);
+  const clearAll = () => {
+    setNotifications([]);
+    Cookies.set(COOKIE_KEY, JSON.stringify([]));
+  };
 
-  const markAsRead = (id: string) =>
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, lida: true } : n))
+  const markAsRead = (id: string) => {
+    const novas = notifications.map((n) =>
+      n.id === id ? { ...n, lida: true } : n
     );
+    setNotifications(novas);
+    Cookies.set(COOKIE_KEY, JSON.stringify(novas));
+  };
 
-  const deleteNotification = (id: string) =>
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  const deleteNotification = (id: string) => {
+    const novas = notifications.filter((n) => n.id !== id);
+    setNotifications(novas);
+    Cookies.set(COOKIE_KEY, JSON.stringify(novas));
+  };
 
   return (
     <DropdownMenu>
