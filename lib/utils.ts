@@ -66,7 +66,7 @@ export const getFileType = (fileName: string) => {
   const imageExtensions = ["jpg", "jpeg", "png", "gif", "bmp", "svg", "webp"];
   const videoExtensions = ["mp4", "avi", "mov", "mkv", "webm"];
   const audioExtensions = ["mp3", "wav", "ogg", "flac"];
-  const certificationxtensions = ["p12"];
+  const certificationxtensions = ["p12, pfx"];
 
   if (documentExtensions.includes(extension))
     return { type: "document", extension };
