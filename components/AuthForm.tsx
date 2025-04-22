@@ -16,8 +16,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { createAccount, signInUser } from "@/lib/actions/user.actions";
 import { useState } from "react";
-import { motion } from "framer-motion";
 import OTPModal from "./OTPModal";
+import dynamic from "next/dynamic";
+
+const MotionDiv = dynamic(
+  () => import("framer-motion").then((mod) => mod.motion.div),
+  {
+    ssr: false,
+  }
+);
 
 type FormType = "sign-in" | "sign-up";
 
@@ -135,7 +142,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
             {isLoading ? (
               <div className="flex space-x-1">
                 {[0, 1, 2].map((index) => (
-                  <motion.div
+                  <MotionDiv
                     key={index}
                     className="h-4 w-6 rounded-full bg-white"
                     style={{ borderRadius: "50% 50% 40% 40%" }}
