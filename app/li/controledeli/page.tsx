@@ -153,29 +153,34 @@ const Page = () => {
       });
   };
 
-  const handleChange = (field: string, value: string, index: number) => {
-    const updatedData = [...(data || [])];
-    updatedData[index] = { ...updatedData[index], [field]: value };
+  const handleChange = async (field: string, value: string, id: string) => {
+    if (!data) return;
+
+    const updatedData = data.map((item) =>
+      item.$id === id ? { ...item, [field]: value } : item
+    );
+
     setData(updatedData);
 
-    const id = updatedData[index].$id;
+    try {
+      const targetItem = updatedData.find((item) => item.$id === id);
+      if (!targetItem) return;
 
-    const {
-      $id,
-      $databaseId,
-      $collectionId,
-      $createdAt,
-      $updatedAt,
-      ...dataToUpdate
-    } = updatedData[index];
+      const {
+        $id,
+        $databaseId,
+        $collectionId,
+        $createdAt,
+        $updatedAt,
+        ...dataToUpdate
+      } = targetItem;
 
-    updateLicencaImportacao(id, dataToUpdate)
-      .then((updated) => {
-        console.log("Licença de Importação atualizada:", updated);
-      })
-      .catch((err) => {
-        console.error("Erro ao atualizar Licença de Importação:", err);
-      });
+      await updateLicencaImportacao(id, dataToUpdate);
+      console.log(`Licença de Importação com id ${id} atualizada com sucesso.`);
+    } catch (err) {
+      console.error("Erro ao atualizar Licença de Importação no backend:", err);
+      alert("Erro ao salvar a alteração no backend. Tente novamente.");
+    }
   };
 
   const handleAdd = async () => {
@@ -507,7 +512,7 @@ const Page = () => {
                     <Input
                       value={item.imp}
                       onChange={(e) =>
-                        handleChange("imp", e.target.value, index)
+                        handleChange("imp", e.target.value, item.$id)
                       }
                       className="w-full sm:w-[120px]"
                     />
@@ -518,7 +523,7 @@ const Page = () => {
                     <Input
                       value={item.importador}
                       onChange={(e) =>
-                        handleChange("importador", e.target.value, index)
+                        handleChange("importador", e.target.value, item.$id)
                       }
                       className="w-full sm:w-[120px]"
                     />
@@ -532,7 +537,7 @@ const Page = () => {
                         handleChange(
                           "referenciaDoCliente",
                           e.target.value,
-                          index
+                          item.$id
                         )
                       }
                       className="w-full"
@@ -544,7 +549,11 @@ const Page = () => {
                     <Input
                       value={item.numeroOrquestra}
                       onChange={(e) =>
-                        handleChange("numeroOrquestra", e.target.value, index)
+                        handleChange(
+                          "numeroOrquestra",
+                          e.target.value,
+                          item.$id
+                        )
                       }
                       className="w-full"
                     />
@@ -555,7 +564,7 @@ const Page = () => {
                     <Input
                       value={item.numeroLi}
                       onChange={(e) =>
-                        handleChange("numeroLi", e.target.value, index)
+                        handleChange("numeroLi", e.target.value, item.$id)
                       }
                       className="w-full"
                     />
@@ -566,7 +575,7 @@ const Page = () => {
                     <Input
                       value={item.ncm}
                       onChange={(e) =>
-                        handleChange("ncm", e.target.value, index)
+                        handleChange("ncm", e.target.value, item.$id)
                       }
                       className="w-full"
                     />
@@ -578,7 +587,7 @@ const Page = () => {
                       type="text"
                       value={item.dataRegistroLI}
                       onChange={(e) =>
-                        handleChange("dataRegistroLI", e.target.value, index)
+                        handleChange("dataRegistroLI", e.target.value, item.$id)
                       }
                       className="w-full"
                     />
@@ -593,7 +602,7 @@ const Page = () => {
                         handleChange(
                           "dataInclusaoOrquestra",
                           e.target.value,
-                          index
+                          item.$id
                         )
                       }
                       className="w-full"
@@ -616,7 +625,7 @@ const Page = () => {
                       className={`${getSituacaoColor(item.situacao)} rounded border border-gray-300 bg-transparent px-2 py-1 dark:border-white/20 dark:bg-zinc-900`}
                       value={item.situacao}
                       onChange={(e) =>
-                        handleChange("situacao", e.target.value, index)
+                        handleChange("situacao", e.target.value, item.$id)
                       }
                     >
                       <option value="em análise">Em análise</option>
@@ -631,7 +640,7 @@ const Page = () => {
                     <Textarea
                       value={item.observacoes}
                       onChange={(e) =>
-                        handleChange("observacoes", e.target.value, index)
+                        handleChange("observacoes", e.target.value, item.$id)
                       }
                       className="w-full"
                     />

@@ -135,11 +135,15 @@ export const getLicencasImportacaoDeferidasHoje = async () => {
     const hoje = new Date();
     const dataDeHoje = formatarData(hoje);
 
-    // Primeiro, tenta buscar os documentos com a data de hoje
+    // Primeiro, tenta buscar os documentos com a data de hoje e situação "em análise"
     const result = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.licencaImportacaoCollectionId,
-      [Query.equal("previsaoDeferimento", dataDeHoje), Query.limit(10)]
+      [
+        Query.equal("previsaoDeferimento", dataDeHoje),
+        Query.equal("situacao", "em análise"),
+        Query.limit(10),
+      ]
     );
 
     // Se encontrou documentos, retorna
@@ -157,7 +161,7 @@ export const getLicencasImportacaoDeferidasHoje = async () => {
     const todos = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.licencaImportacaoCollectionId,
-      [Query.limit(1000)]
+      [Query.equal("situacao", "em análise"), Query.limit(1000)]
     );
 
     const documentosOrdenados = todos.documents
@@ -195,7 +199,7 @@ export const getLicencasImportacaoDeferidasHoje = async () => {
     }));
   } catch (error) {
     console.error(
-      "Erro ao buscar Licenças de Importação com data de deferimento mais próxima de hoje:",
+      "Erro ao buscar Licenças de Importação com data de deferimento mais próxima de hoje e situação 'em análise':",
       error
     );
     throw error;
