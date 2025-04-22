@@ -33,9 +33,4 @@ export const SIDENAV_ITEMS: SideNavItem[] = [
       { title: "Perfil", path: "/settings/profile" },
     ],
   },
-  {
-    title: "Help",
-    path: "/help",
-    icon: <Icon icon="lucide:help-circle" width="24" height="24" />,
-  },
 ];
