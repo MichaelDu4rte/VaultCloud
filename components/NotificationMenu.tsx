@@ -41,10 +41,10 @@ export function NotificationMenu() {
           lida: false,
         }));
 
-        const merged = [
-          ...fetched.filter((f) => !existing.some((e) => e.id === f.id)),
-          ...existing,
-        ];
+        const merged = fetched.map((f) => {
+          const match = existing.find((e) => e.id === f.id);
+          return match ? { ...f, lida: match.lida } : f;
+        });
 
         setNotifications(merged);
         Cookies.set(COOKIE_KEY, JSON.stringify(merged));
