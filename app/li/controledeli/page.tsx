@@ -154,34 +154,44 @@ const Page = () => {
   };
 
   const handleChange = async (field: string, value: string, id: string) => {
-    if (!data) return;
+  if (!data) return;
 
-    const updatedData = data.map((item) =>
-      item.$id === id ? { ...item, [field]: value } : item
-    );
+  const updatedData = data.map((item) =>
+    item.$id === id
+      ? {
+          ...item,
+          [field]: field === "numeroOrquestra" ? parseInt(value, 10) || 0 : value,
+        }
+      : item
+  );
 
-    setData(updatedData);
+  setData(updatedData);
 
-    try {
-      const targetItem = updatedData.find((item) => item.$id === id);
-      if (!targetItem) return;
+  try {
+    const targetItem = updatedData.find((item) => item.$id === id);
+    if (!targetItem) return;
 
-      const {
-        $id,
-        $databaseId,
-        $collectionId,
-        $createdAt,
-        $updatedAt,
-        ...dataToUpdate
-      } = targetItem;
+    const {
+      $id,
+      $databaseId,
+      $collectionId,
+      $createdAt,
+      $updatedAt,
+      ...dataToUpdate
+    } = targetItem;
 
-      await updateLicencaImportacao(id, dataToUpdate);
-      console.log(`Licença de Importação com id ${id} atualizada com sucesso.`);
-    } catch (err) {
-      console.error("Erro ao atualizar Licença de Importação no backend:", err);
-      alert("Erro ao salvar a alteração no backend. Tente novamente.");
+    
+    if (dataToUpdate.numeroOrquestra) {
+      dataToUpdate.numeroOrquestra = parseInt(dataToUpdate.numeroOrquestra, 10);
     }
-  };
+
+    await updateLicencaImportacao(id, dataToUpdate);
+    console.log(`Licença de Importação com id ${id} atualizada com sucesso.`);
+  } catch (err) {
+    console.error("Erro ao atualizar Licença de Importação no backend:", err);
+    alert("Erro ao salvar a alteração no backend. Tente novamente.");
+  }
+};
 
   const handleAdd = async () => {
     try {
