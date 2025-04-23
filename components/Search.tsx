@@ -28,7 +28,11 @@ const Search = ({ closeModal }: { closeModal: () => void }) => {
       }
 
       try {
-        const files = await getFiles({ types: [], searchText: trimmedQuery });
+       // Buscar apenas arquivos do tipo "certificados"
+        const files = await getFiles({ types: ["certificados"], searchText: trimmedQuery });
+
+        // Caso queira habilitar a busca global, comente a linha acima e descomente abaixo:
+        // const files = await getFiles({ types: [], searchText: trimmedQuery });
 
         if (files.documents.length === 0) {
           setResults([]);
