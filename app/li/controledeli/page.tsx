@@ -154,44 +154,64 @@ const Page = () => {
   };
 
   const handleChange = async (field: string, value: string, id: string) => {
-  if (!data) return;
+    if (!data) return;
 
-  const updatedData = data.map((item) =>
-    item.$id === id
-      ? {
+    const updatedData = data.map((item) => {
+      if (item.$id === id) {
+        const updatedItem = {
           ...item,
-          [field]: field === "numeroOrquestra" ? parseInt(value, 10) || 0 : value,
+          [field]:
+            field === "numeroOrquestra" ? parseInt(value, 10) || 0 : value,
+        };
+
+        // Se o campo alterado for "dataInclusaoOrquestra", calcule a previsão de deferimento
+        if (field === "dataInclusaoOrquestra" && value.length === 10) {
+          const dateParts = value.split("/");
+          if (dateParts.length === 3) {
+            const [day, month, year] = dateParts;
+            const fullYear = year.length === 2 ? `20${year}` : year;
+            const formattedDate = `${fullYear}-${month}-${day}`;
+
+            const previsao = calcularPrevisaoDeferimento(formattedDate);
+            updatedItem.previsaoDeferimento = previsao; // Atualiza a previsão de deferimento
+          }
         }
-      : item
-  );
 
-  setData(updatedData);
+        return updatedItem;
+      }
+      return item;
+    });
 
-  try {
-    const targetItem = updatedData.find((item) => item.$id === id);
-    if (!targetItem) return;
+    setData(updatedData); // Atualize o estado com os dados modificados
 
-    const {
-      $id,
-      $databaseId,
-      $collectionId,
-      $createdAt,
-      $updatedAt,
-      ...dataToUpdate
-    } = targetItem;
+    try {
+      const targetItem = updatedData.find((item) => item.$id === id);
+      if (!targetItem) return;
 
-    
-    if (dataToUpdate.numeroOrquestra) {
-      dataToUpdate.numeroOrquestra = parseInt(dataToUpdate.numeroOrquestra, 10);
+      const {
+        $id,
+        $databaseId,
+        $collectionId,
+        $createdAt,
+        $updatedAt,
+        ...dataToUpdate
+      } = targetItem;
+
+      if (dataToUpdate.numeroOrquestra) {
+        dataToUpdate.numeroOrquestra = parseInt(
+          dataToUpdate.numeroOrquestra,
+          10
+        );
+      }
+
+      // Envia a atualização para o backend
+      await updateLicencaImportacao(id, dataToUpdate);
+      console.log(`Licença de Importação com id ${id} atualizada com sucesso.`);
+    } catch (err) {
+      console.error("Erro ao atualizar Licença de Importação no backend:", err);
+      alert("Erro ao salvar a alteração no backend. Tente novamente.");
     }
-
-    await updateLicencaImportacao(id, dataToUpdate);
-    console.log(`Licença de Importação com id ${id} atualizada com sucesso.`);
-  } catch (err) {
-    console.error("Erro ao atualizar Licença de Importação no backend:", err);
-    alert("Erro ao salvar a alteração no backend. Tente novamente.");
-  }
-};
+  };
 
   const handleAdd = async () => {
     try {
@@ -325,6 +345,37 @@ const Page = () => {
     });
   };
 
+  useEffect(() => {
+    if (
+      form.dataInclusaoOrquestra &&
+      form.dataInclusaoOrquestra.length === 10
+    ) {
+      const dateParts = form.dataInclusaoOrquestra.split("/");
+
+      if (dateParts.length === 3) {
+        const [day, month, year] = dateParts;
+
+        const fullYear = year.length === 2 ? `20${year}` : year;
+
+        const formattedDate = `${fullYear}-${month}-${day}`;
+
+        const previsao = calcularPrevisaoDeferimento(formattedDate);
+
+        setForm((prev) => ({
+          ...prev,
+          previsaoDeferimento: previsao,
+        }));
+      } else {
+        console.log("Data no formato inválido", form.dataInclusaoOrquestra);
+      }
+    } else if (
+      form.dataInclusaoOrquestra &&
+      form.dataInclusaoOrquestra.length !== 10
+    ) {
+      console.log("A data deve ter o formato dd/mm/yyyy completo.");
+    }
+  }, [form.dataInclusaoOrquestra]);
+
   return (
     <div className="space-y-10 rounded-2xl bg-white p-8 shadow-md dark:border dark:border-white/20 dark:bg-zinc-900/80">
       <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:gap-0">
@@ -380,6 +431,7 @@ const Page = () => {
           <DialogTrigger asChild>
             <Button>Adicionar LI</Button>
           </DialogTrigger>
+
           <DialogContent className="max-w-3xl">
             <DialogHeader>
               <DialogTitle>Nova Licença de Importação</DialogTitle>
@@ -387,10 +439,9 @@ const Page = () => {
 
             <div className="grid grid-cols-1 gap-4 py-4 md:grid-cols-2 lg:grid-cols-3">
               <Input
-                placeholder="Informe a IMP"
+                placeholder="IMP-00000"
                 value={form.imp}
                 onChange={(e) => setForm({ ...form, imp: e.target.value })}
-                className="w-full"
               />
               <Input
                 placeholder="Importador"
@@ -398,7 +449,6 @@ const Page = () => {
                 onChange={(e) =>
                   setForm({ ...form, importador: e.target.value })
                 }
-                className="w-full"
               />
               <Input
                 placeholder="Referência do Cliente"
@@ -406,69 +456,70 @@ const Page = () => {
                 onChange={(e) =>
                   setForm({ ...form, referenciaDoCliente: e.target.value })
                 }
-                className="w-full"
               />
+
+              <Input
+                placeholder="Número da LI"
+                value={form.numeroLi}
+                onChange={(e) => setForm({ ...form, numeroLi: e.target.value })}
+              />
+
               <Input
                 placeholder="Número do Orquestra"
-                value={form.numeroOrquestra.toString()}
+                type="number"
+                value={form.numeroOrquestra || ""}
                 onChange={(e) =>
                   setForm({
                     ...form,
                     numeroOrquestra: parseInt(e.target.value, 10) || 0,
                   })
                 }
-                className="w-full"
-              />
-              <Input
-                placeholder="Número da Li"
-                value={form.numeroLi}
-                onChange={(e) => setForm({ ...form, numeroLi: e.target.value })}
-                className="w-full"
               />
               <Input
                 placeholder="NCM"
                 value={form.ncm}
                 onChange={(e) => setForm({ ...form, ncm: e.target.value })}
-                className="w-full"
               />
+
               <Input
-                placeholder="Data Registro LI (dd/mm/yyyy)"
+                placeholder="Data Registro LI"
                 value={form.dataRegistroLI}
                 onChange={(e) =>
                   setForm({ ...form, dataRegistroLI: e.target.value })
                 }
-                className="w-full"
               />
               <Input
-                placeholder="Data Pagamento Orquestra (dd/mm/yyyy)"
+                placeholder="Data Pagamento"
                 value={form.dataInclusaoOrquestra}
                 onChange={(e) =>
                   setForm({ ...form, dataInclusaoOrquestra: e.target.value })
                 }
-                className="w-full"
               />
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">
-                  Previsão de Deferimento (automático)
-                </label>
+
+              <div className="flex flex-col gap-1">
                 <Input
                   type="text"
                   value={form.previsaoDeferimento}
                   readOnly
-                  className="w-full"
+                  placeholder="Previsão de Deferimento"
                 />
               </div>
-              <Textarea
-                placeholder="Observações"
-                className="min-h-[80px] w-full"
-                value={form.observacoes}
-                onChange={(e) =>
-                  setForm({ ...form, observacoes: e.target.value })
-                }
-              />
+
+              {/* Textarea em linha separada no grid */}
+              <div className="col-span-full">
+                <Textarea
+                  placeholder="Observações"
+                  className="min-h-[80px]"
+                  value={form.observacoes}
+                  onChange={(e) =>
+                    setForm({ ...form, observacoes: e.target.value })
+                  }
+                />
+              </div>
             </div>
 
-            <DialogFooter className="mt-4 flex gap-2">
+            {/* Rodapé alinhado e com botões claros */}
+            <DialogFooter className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
               <Button
                 variant="outline"
                 onClick={() => setOpen(false)}
