@@ -10,47 +10,87 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { getImpsComLIsDeferindoHoje } from "@/lib/actions/li.actions";
+import {
+  getNotifications,
+  updateNotification,
+  deleteNotification as deleteNotificationAPI,
+  createNotification,
+  getBackendLastUpdated,
+  markAllNotificationsAsReadBatch,
+} from "@/lib/actions/notification.actions";
+import { getQuantidadeImpsDeferindoHoje } from "@/lib/actions/li.actions";
 
 type Notification = {
-  id: string;
+  $id: string;
+  text: string;
   imp: string;
   importador: string;
   lida: boolean;
 };
 
-const COOKIE_KEY = "notifications";
-
 export function NotificationMenu() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const init = async () => {
-      const stored = Cookies.get(COOKIE_KEY);
-      let existing: Notification[] = [];
-      if (stored) {
-        existing = JSON.parse(stored);
-      }
-
+      setIsLoading(true);
       try {
-        const imps = await getImpsComLIsDeferindoHoje();
-        const fetched = imps.map((item, idx) => ({
-          id: `${item.imp}-${idx}`,
-          imp: item.imp,
-          importador: item.importador,
-          lida: false,
-        }));
+        const cachedNotifications = Cookies.get("notifications");
+        const lastUpdated = Cookies.get("notifications_last_updated");
 
-        const merged = fetched.map((f) => {
-          const match = existing.find((e) => e.id === f.id);
-          return match ? { ...f, lida: match.lida } : f;
-        });
+        if (cachedNotifications && lastUpdated) {
+          setNotifications(JSON.parse(cachedNotifications));
+        }
 
-        setNotifications(merged);
-        Cookies.set(COOKIE_KEY, JSON.stringify(merged));
+        const backendTimestamp = await getBackendLastUpdated();
+        if (!lastUpdated || backendTimestamp !== lastUpdated) {
+          const fetchedNotifications = await getNotifications();
+
+          const quantidade = await getQuantidadeImpsDeferindoHoje();
+
+          if (quantidade > 0) {
+            try {
+              const createdNotification = await createNotification({
+                text: `Quantidade de LIs deferindo hoje: ${quantidade}`,
+              });
+              fetchedNotifications.push(createdNotification);
+            } catch (error) {
+              console.error(
+                "Erro ao criar notificação de quantidade de LIs:",
+                error
+              );
+            }
+          }
+
+          const mappedNotifications = fetchedNotifications.map((doc) => ({
+            $id: doc.$id,
+            text: doc.text,
+            imp: doc.imp,
+            importador: doc.importador,
+            lida: doc.lida,
+          }));
+
+          const sortedNotifications = [...mappedNotifications].sort((a, b) => {
+            if (!a.lida && b.lida) return -1;
+            if (a.lida && !b.lida) return 1;
+            return 0;
+          });
+
+          setNotifications(sortedNotifications);
+          Cookies.set("notifications", JSON.stringify(sortedNotifications), {
+            expires: 1,
+          });
+          if (backendTimestamp) {
+            Cookies.set("notifications_last_updated", backendTimestamp, {
+              expires: 1,
+            });
+          }
+        }
       } catch (error) {
         console.error("Erro ao carregar notificações:", error);
-        setNotifications(existing);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -59,29 +99,73 @@ export function NotificationMenu() {
 
   const unreadCount = notifications.filter((n) => !n.lida).length;
 
-  const markAllAsRead = () => {
-    const novas = notifications.map((n) => ({ ...n, lida: true }));
-    setNotifications(novas);
-    Cookies.set(COOKIE_KEY, JSON.stringify(novas));
+  const markAllAsRead = async () => {
+    try {
+      // Filtrar notificações não lidas
+      const unreadNotifications = notifications.filter((n) => !n.lida);
+      const unreadIds = unreadNotifications.map((n) => n.$id);
+
+      if (unreadIds.length > 0) {
+        await markAllNotificationsAsReadBatch(unreadIds);
+
+        // Atualizar o estado localmente
+        const updatedNotifications = notifications.map((n) =>
+          unreadIds.includes(n.$id) ? { ...n, lida: true } : n
+        );
+        setNotifications(updatedNotifications);
+
+        Cookies.set("notifications", JSON.stringify(updatedNotifications), {
+          expires: 1,
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao marcar todas as notificações como lidas:", error);
+    }
   };
 
-  const clearAll = () => {
-    setNotifications([]);
-    Cookies.set(COOKIE_KEY, JSON.stringify([]));
+  const clearAll = async () => {
+    try {
+      for (const notification of notifications) {
+        await deleteNotificationAPI(notification.$id);
+      }
+      setNotifications([]);
+      Cookies.remove("notifications");
+      Cookies.remove("notifications_last_updated");
+    } catch (error) {
+      console.error("Erro ao limpar notificações:", error);
+    }
   };
 
-  const markAsRead = (id: string) => {
-    const novas = notifications.map((n) =>
-      n.id === id ? { ...n, lida: true } : n
-    );
-    setNotifications(novas);
-    Cookies.set(COOKIE_KEY, JSON.stringify(novas));
+  const markAsRead = async (id: string) => {
+    try {
+      await updateNotification(id, { lida: true });
+      const updatedNotifications = notifications.map((n) =>
+        n.$id === id ? { ...n, lida: true } : n
+      );
+      setNotifications(updatedNotifications);
+
+      // Atualizar o cache no cookie
+      Cookies.set("notifications", JSON.stringify(updatedNotifications), {
+        expires: 1,
+      });
+    } catch (error) {
+      console.error("Erro ao marcar notificação como lida:", error);
+    }
   };
 
-  const deleteNotification = (id: string) => {
-    const novas = notifications.filter((n) => n.id !== id);
-    setNotifications(novas);
-    Cookies.set(COOKIE_KEY, JSON.stringify(novas));
+  const deleteNotification = async (id: string) => {
+    try {
+      await deleteNotificationAPI(id);
+      const updatedNotifications = notifications.filter((n) => n.$id !== id);
+      setNotifications(updatedNotifications);
+
+      // Atualizar o cache no cookie
+      Cookies.set("notifications", JSON.stringify(updatedNotifications), {
+        expires: 1,
+      });
+    } catch (error) {
+      console.error("Erro ao excluir notificação:", error);
+    }
   };
 
   return (
@@ -89,7 +173,7 @@ export function NotificationMenu() {
       <DropdownMenuTrigger asChild>
         <Button
           type="button"
-          className="relative size-[45px] rounded-xl bg-[#f0f0f0] p-0 text-[#333] shadow-drop-1 hover:bg-[#e0e0e0] dark:border dark:border-white/20 dark:bg-zinc-900 dark:text-white"
+          className="relative flex size-[45px] items-center justify-center rounded-xl bg-[#f0f0f0] p-0 text-[#333] shadow-drop-1 hover:bg-[#e0e0e0] dark:border dark:border-white/20 dark:bg-zinc-900 dark:text-white"
         >
           <Bell className="size-6" />
           {unreadCount > 0 && (
@@ -125,48 +209,44 @@ export function NotificationMenu() {
         </div>
 
         <div className="max-h-[400px] overflow-y-auto">
-          {notifications.length === 0 ? (
+          {isLoading ? (
+            <div className="py-8 text-center text-sm text-zinc-600 dark:text-zinc-400">
+              Carregando notificações...
+            </div>
+          ) : notifications.length === 0 ? (
             <div className="py-8 text-center text-sm text-zinc-600 dark:text-zinc-400">
               Nenhuma nova notificação
             </div>
           ) : (
             notifications.map((notification) => (
               <div
-                key={notification.id}
-                className={`group flex items-start gap-3 border-b border-zinc-800 p-4 transition-colors ${
+                key={notification.$id}
+                className={`group flex items-center gap-3 border-b border-zinc-800 p-4 transition-colors ${
                   notification.lida
                     ? "opacity-50"
                     : "bg-zinc-100 hover:bg-zinc-100 hover:opacity-100 dark:bg-zinc-900 dark:hover:bg-zinc-800"
                 }`}
               >
-                <div className="mt-1">
-                  <Package className="size-5 text-purple-700 dark:text-purple-400" />
-                </div>
-                <div className="flex flex-1 flex-col text-sm">
-                  <p className="font-medium text-black dark:text-white">
-                    LI prevista com deferimento para hoje
-                  </p>
-                  <p className="mt-1 text-xs text-zinc-400">
-                    {notification.imp} — Importador:{" "}
-                    <span className="font-medium text-purple-300">
-                      {notification.importador}
-                    </span>
+                <Package className="size-5 shrink-0 text-purple-700 dark:text-purple-400" />
+                <div className="flex flex-1 flex-col justify-center text-sm">
+                  <p className="break-words font-medium text-black dark:text-white">
+                    {notification.text}
                   </p>
                 </div>
-                <div className="flex flex-col items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                <div className="ml-auto flex flex-col items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                   {!notification.lida && (
                     <button
                       title="Marcar como lida"
-                      onClick={() => markAsRead(notification.id)}
-                      className="text-green/80 hover:text-green"
+                      onClick={() => markAsRead(notification.$id)}
+                      className="text-green"
                     >
                       <Check size={16} />
                     </button>
                   )}
                   <button
                     title="Excluir"
-                    onClick={() => deleteNotification(notification.id)}
-                    className="text-red/80 hover:text-red"
+                    onClick={() => deleteNotification(notification.$id)}
+                    className="text-red"
                   >
                     <Trash2 size={16} />
                   </button>

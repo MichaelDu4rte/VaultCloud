@@ -336,14 +336,19 @@ export const getImpsComLIsDeferindoHoje = async () => {
         .padStart(2, "0")}/${data.getFullYear()}`;
     };
 
-    const hoje = new Date();
+    const hoje = new Date(); // Use a data atual dinamicamente
+
     const dataDeHoje = formatarData(hoje);
+
+    console.log("Data de hoje formatada:", dataDeHoje);
 
     const result = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.licencaImportacaoCollectionId,
-      [Query.equal("previsaoDeferimento", dataDeHoje), Query.limit(1000)]
+      [Query.equal("previsaoDeferimento", dataDeHoje), Query.limit(70)]
     );
+
+    console.log("Resultado da consulta:", result);
 
     if (result.total > 0) {
       const impsComLIsDeferindoHoje = result.documents.map((doc) => ({
@@ -351,12 +356,64 @@ export const getImpsComLIsDeferindoHoje = async () => {
         importador: doc.importador,
       }));
 
+      console.log("LIs deferindo hoje:", impsComLIsDeferindoHoje);
+
       return impsComLIsDeferindoHoje;
     }
 
+    console.log("Nenhuma LI com deferimento para hoje foi encontrada.");
     return [];
   } catch (error) {
     console.error("Erro ao buscar imps com LIs deferindo hoje:", error);
+    throw error;
+  }
+};
+
+let cache = {
+  data: null as number | null, // Armazena o resultado da requisição
+  lastExecutionDate: null as string | null, // Armazena a data da última execução no formato "YYYY-MM-DD"
+};
+
+export const getQuantidadeImpsDeferindoHoje = async () => {
+  try {
+    const { databases } = await createAdminClient();
+
+    const formatarData = (data: Date): string => {
+      return `${data.getFullYear()}-${(data.getMonth() + 1)
+        .toString()
+        .padStart(2, "0")}-${data.getDate().toString().padStart(2, "0")}`;
+    };
+
+    const hoje = new Date();
+    const dataDeHoje = formatarData(hoje);
+
+    // Verifica se já temos o cache para a data de hoje
+    if (cache.lastExecutionDate === dataDeHoje && cache.data !== null) {
+      return cache.data; // Retorna o valor armazenado no cache
+    }
+
+    // Caso não tenha cache ou seja um novo dia, faz a requisição
+    const result = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.licencaImportacaoCollectionId,
+      [
+        Query.equal(
+          "previsaoDeferimento",
+          `${hoje.getDate()}/${hoje.getMonth() + 1}/${hoje.getFullYear()}`
+        ), // Formato DD/MM/YYYY
+        Query.limit(1000),
+      ]
+    );
+
+    // Atualiza o cache
+    cache = {
+      data: result.total,
+      lastExecutionDate: dataDeHoje,
+    };
+
+    return result.total; // Retorna o resultado da requisição
+  } catch (error) {
+    console.error("Erro ao buscar quantidade de imps deferindo hoje:", error);
     throw error;
   }
 };

@@ -6,18 +6,125 @@ import { createAdminClient } from "@/lib/appwrite";
 import { appwriteConfig } from "@/lib/appwrite/config";
 import { ID, Query } from "node-appwrite";
 
-// Marca todas as notificações como lidas
-export const markAllAsRead = async (ownerId: string) => {
+// Cria uma nova notificação
+export const createNotification = async (data: {
+  text: string;
+  imp?: string;
+  importador?: string;
+  lida?: boolean;
+}) => {
   try {
     const { databases } = await createAdminClient();
 
-    const notifications = await databases.listDocuments(
+    // Verifica se já existe uma notificação excluída similar
+    const existingNotification = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.notificationsCollectionId,
-      [Query.equal("owner", ownerId), Query.equal("lida", false)]
+      [
+        Query.equal("text", data.text || ""),
+        Query.equal("imp", data.imp || ""),
+        Query.equal("importador", data.importador || ""),
+        Query.equal("deleted", true),
+      ]
     );
 
-    const updates = notifications.documents.map((notification) =>
+    if (existingNotification.documents.length > 0) {
+      const notification = existingNotification.documents[0];
+      const result = await databases.updateDocument(
+        appwriteConfig.databaseId,
+        appwriteConfig.notificationsCollectionId,
+        notification.$id,
+        { ...data, deleted: false, lida: data.lida ?? false }
+      );
+      return result;
+    }
+
+    const result = await databases.createDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.notificationsCollectionId,
+      ID.unique(),
+      { ...data, lida: data.lida ?? false, deleted: false }
+    );
+
+    return result;
+  } catch (error) {
+    console.error("Erro ao criar Notificação", error);
+    throw error;
+  }
+};
+
+// Atualiza uma notificação existente
+export const updateNotification = async (
+  id: string,
+  data: {
+    text?: string;
+    imp?: string;
+    importador?: string;
+    lida?: boolean;
+  }
+) => {
+  try {
+    const { databases } = await createAdminClient();
+
+    const result = await databases.updateDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.notificationsCollectionId,
+      id,
+      data
+    );
+
+    return result;
+  } catch (error) {
+    console.error("Erro ao atualizar Notificação", error);
+    throw error;
+  }
+};
+
+// Retorna a lista de todas as notificações (excluindo as deletadas)
+export const getNotifications = async () => {
+  try {
+    const { databases } = await createAdminClient();
+
+    const result = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.notificationsCollectionId,
+      [Query.equal("deleted", false), Query.limit(20)] // Exclui as notificações deletadas
+    );
+
+    return result.documents;
+  } catch (error) {
+    console.error("Erro ao listar Notificações", error);
+    throw error;
+  }
+};
+
+// Marca uma notificação como excluída
+export const deleteNotification = async (id: string) => {
+  try {
+    const { databases } = await createAdminClient();
+
+    // Marca a notificação como excluída
+    const result = await databases.updateDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.notificationsCollectionId,
+      id,
+      { deleted: true }
+    );
+
+    return result;
+  } catch (error) {
+    console.error("Erro ao excluir Notificação", error);
+    throw error;
+  }
+};
+
+// Marca todas as notificações como lidas
+export const markAllNotificationsAsRead = async () => {
+  try {
+    const notifications = await getNotifications();
+
+    const { databases } = await createAdminClient();
+    const updatePromises = notifications.map((notification) =>
       databases.updateDocument(
         appwriteConfig.databaseId,
         appwriteConfig.notificationsCollectionId,
@@ -26,118 +133,80 @@ export const markAllAsRead = async (ownerId: string) => {
       )
     );
 
-    await Promise.all(updates);
-
+    await Promise.all(updatePromises);
     return { success: true };
   } catch (error) {
-    console.error("Erro ao marcar todas as notificações como lidas", error);
+    console.error("Erro ao marcar todas as notificações como lidas:", error);
     throw error;
   }
 };
 
-// Limpa todas as notificações de um usuário
-export const clearAll = async (ownerId: string) => {
-  try {
-    const { databases } = await createAdminClient();
-
-    const notifications = await databases.listDocuments(
-      appwriteConfig.databaseId,
-      appwriteConfig.notificationsCollectionId,
-      [Query.equal("owner", ownerId)]
-    );
-
-    const deletions = notifications.documents.map((notification) =>
-      databases.deleteDocument(
-        appwriteConfig.databaseId,
-        appwriteConfig.notificationsCollectionId,
-        notification.$id
-      )
-    );
-
-    await Promise.all(deletions);
-
-    return { success: true };
-  } catch (error) {
-    console.error("Erro ao limpar todas as notificações", error);
-    throw error;
-  }
-};
-
-// Marca uma única notificação como lida
-export const markAsRead = async (notificationId: string) => {
-  try {
-    const { databases } = await createAdminClient();
-
-    const result = await databases.updateDocument(
-      appwriteConfig.databaseId,
-      appwriteConfig.notificationsCollectionId,
-      notificationId,
-      { lida: true }
-    );
-
-    return result;
-  } catch (error) {
-    console.error("Erro ao marcar notificação como lida", error);
-    throw error;
-  }
-};
-
-// Exclui uma notificação
-export const deleteNotification = async (notificationId: string) => {
-  try {
-    const { databases } = await createAdminClient();
-
-    const result = await databases.deleteDocument(
-      appwriteConfig.databaseId,
-      appwriteConfig.notificationsCollectionId,
-      notificationId
-    );
-
-    return result;
-  } catch (error) {
-    console.error("Erro ao deletar notificação", error);
-    throw error;
-  }
-};
-
-// Lista todas as notificações de um usuário
-export const listNotifications = async (ownerId: string) => {
+// Retorna a quantidade de notificações não lidas
+export const getUnreadNotificationsCount = async () => {
   try {
     const { databases } = await createAdminClient();
 
     const result = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.notificationsCollectionId,
-      [Query.equal("owner", ownerId), Query.limit(100)]
+      [Query.equal("lida", false), Query.equal("deleted", false)] // Exclui as notificações deletadas
     );
 
-    return result.documents;
+    return result.total;
   } catch (error) {
-    console.error("Erro ao listar notificações", error);
+    console.error("Erro ao buscar notificações não lidas:", error);
     throw error;
   }
 };
 
-// Cria uma nova notificação
-export const createNotification = async (data: {
-  importador: string;
-  imp: string;
-  owner: string;
-  lida?: boolean;
-}) => {
+// Retorna o timestamp mais recente de atualização das notificações
+export const getBackendLastUpdated = async () => {
   try {
     const { databases } = await createAdminClient();
 
-    const result = await databases.createDocument(
+    const result = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.notificationsCollectionId,
-      ID.unique(),
-      { ...data, lida: data.lida ?? false }
+      [
+        Query.equal("deleted", false),
+        Query.orderDesc("$updatedAt"),
+        Query.limit(1),
+      ] // Exclui as deletadas
     );
 
-    return result;
+    if (result.documents.length > 0) {
+      return result.documents[0].$updatedAt;
+    } else {
+      return null;
+    }
   } catch (error) {
-    console.error("Erro ao criar notificação", error);
+    console.error(
+      "Erro ao buscar o timestamp mais recente de notificações:",
+      error
+    );
+    throw error;
+  }
+};
+
+// Marca notificações em lote como lidas
+export const markAllNotificationsAsReadBatch = async (ids: string[]) => {
+  try {
+    const { databases } = await createAdminClient();
+
+    const updatePromises = ids.map((id) =>
+      databases.updateDocument(
+        appwriteConfig.databaseId,
+        appwriteConfig.notificationsCollectionId,
+        id,
+        { lida: true }
+      )
+    );
+
+    await Promise.all(updatePromises);
+
+    return { success: true, updatedCount: ids.length };
+  } catch (error) {
+    console.error("Erro ao marcar notificações como lidas em lote:", error);
     throw error;
   }
 };
