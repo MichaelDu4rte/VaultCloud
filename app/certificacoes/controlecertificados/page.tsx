@@ -36,6 +36,7 @@ import {
   deleteCertification,
   createCertification,
 } from "@/lib/actions/certifications.actions";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Função auxiliar para formatar datas como string
 const formatDateAsString = (date: any): string => {
@@ -53,6 +54,8 @@ const Page = () => {
   const [editingCertification, setEditingCertification] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [newCertification, setNewCertification] = useState({
     referencia: "",
     nomeComercial: "",
@@ -67,15 +70,16 @@ const Page = () => {
   // Fetch de certificados ao carregar o componente
   useEffect(() => {
     const fetchCertifications = async () => {
-      // Removed setIsLoading call
+      setIsLoading(true);
       try {
         const data = await getCertifications();
         setCertifications(data);
       } catch (error) {
         console.error("Erro ao buscar certificados:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
-
     fetchCertifications();
   }, []);
 
@@ -267,78 +271,96 @@ const Page = () => {
             className="mb-5 mt-4 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary dark:border-white/30 dark:bg-zinc-900 md:w-96"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            disabled={isLoading}
           />
         </div>
-        <Button onClick={() => setIsAddDialogOpen(true)}>
+        <Button onClick={() => setIsAddDialogOpen(true)} disabled={isLoading}>
           Adicionar Certificado
         </Button>
       </div>
-      <Button onClick={handleExportToExcel}>Exportar para Excel</Button>
+      <Button onClick={handleExportToExcel} disabled={isLoading}>
+        Exportar para Excel
+      </Button>
 
       <div className="max-h-[550px] overflow-auto rounded-2xl border">
-        <Table>
-          <TableHeader className="sticky top-0 z-10 bg-white shadow-md dark:bg-zinc-900">
-            <TableRow>
-              <TableHead>REF. APOEMA</TableHead>
-              <TableHead>NOME COMERCIAL</TableHead>
-              <TableHead>CERTIFICADO</TableHead>
-              <TableHead>VALIDADE DATA</TableHead>
-              <TableHead
-                onClick={handleSortByMaintenanceDate}
-                className="cursor-pointer"
-              >
-                DATA MANUTENÇÃO{" "}
-                {sortOrder === "asc" ? "↑" : sortOrder === "desc" ? "↓" : ""}
-              </TableHead>
-              <TableHead>MANUTENÇÃO EM ANDAMENTO</TableHead>
-              <TableHead>Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredCertifications.map((cert) => (
-              <TableRow key={cert.$id}>
-                <TableCell>{cert.referencia}</TableCell>
-                <TableCell>{cert.nomeComercial}</TableCell>
-                <TableCell>{cert.certificado}</TableCell>
-                <TableCell>{cert.validade}</TableCell>
-                <TableCell>{cert.manutencaoData}</TableCell>
-                <TableCell>
-                  <Select
-                    value={cert.manutencaoEmAndamento ? "sim" : "nao"}
-                    onValueChange={(value) =>
-                      handleUpdateMaintenanceStatus(cert.$id, value === "sim")
-                    }
-                  >
-                    <SelectTrigger className="w-[120px]">
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sim">Sim</SelectItem>
-                      <SelectItem value="nao">Não</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell className="flex gap-2">
-                  <Button
-                    onClick={() => {
-                      setEditingCertification(cert);
-                      setIsEditDialogOpen(true);
-                    }}
-                    className="w-[40px] dark:bg-zinc-800 dark:text-white"
-                  >
-                    <FaEdit />
-                  </Button>
-                  <Button
-                    onClick={() => handleDeleteCertification(cert.$id)}
-                    className="w-[40px] dark:bg-zinc-800 dark:text-white"
-                  >
-                    <FaTrash />
-                  </Button>
-                </TableCell>
-              </TableRow>
+        {isLoading ? (
+          // Skeleton exibido durante o carregamento
+          <div>
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div key={index} className="flex gap-4 p-4">
+                <Skeleton className="h-8 w-1/6" />
+                <Skeleton className="h-8 w-1/4" />
+                <Skeleton className="h-8 w-1/4" />
+                <Skeleton className="h-8 w-1/6" />
+                <Skeleton className="h-8 w-1/6" />
+              </div>
             ))}
-          </TableBody>
-        </Table>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader className="sticky top-0 z-10 bg-white shadow-md dark:bg-zinc-900">
+              <TableRow>
+                <TableHead>REF. APOEMA</TableHead>
+                <TableHead>NOME COMERCIAL</TableHead>
+                <TableHead>CERTIFICADO</TableHead>
+                <TableHead>VALIDADE DATA</TableHead>
+                <TableHead
+                  onClick={handleSortByMaintenanceDate}
+                  className="cursor-pointer"
+                >
+                  DATA MANUTENÇÃO{" "}
+                  {sortOrder === "asc" ? "↑" : sortOrder === "desc" ? "↓" : ""}
+                </TableHead>
+                <TableHead>MANUTENÇÃO EM ANDAMENTO</TableHead>
+                <TableHead>Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredCertifications.map((cert) => (
+                <TableRow key={cert.$id}>
+                  <TableCell>{cert.referencia}</TableCell>
+                  <TableCell>{cert.nomeComercial}</TableCell>
+                  <TableCell>{cert.certificado}</TableCell>
+                  <TableCell>{cert.validade}</TableCell>
+                  <TableCell>{cert.manutencaoData}</TableCell>
+                  <TableCell>
+                    <Select
+                      value={cert.manutencaoEmAndamento ? "sim" : "nao"}
+                      onValueChange={(value) =>
+                        handleUpdateMaintenanceStatus(cert.$id, value === "sim")
+                      }
+                    >
+                      <SelectTrigger className="w-[120px]">
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sim">Sim</SelectItem>
+                        <SelectItem value="nao">Não</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell className="flex gap-2">
+                    <Button
+                      onClick={() => {
+                        setEditingCertification(cert);
+                        setIsEditDialogOpen(true);
+                      }}
+                      className="w-[40px] dark:bg-zinc-800 dark:text-white"
+                    >
+                      <FaEdit />
+                    </Button>
+                    <Button
+                      onClick={() => handleDeleteCertification(cert.$id)}
+                      className="w-[40px] dark:bg-zinc-800 dark:text-white"
+                    >
+                      <FaTrash />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </div>
 
       {/* Modal de edição */}
