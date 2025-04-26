@@ -22,6 +22,11 @@ export const SIDENAV_ITEMS: SideNavItem[] = [
     title: "Certificados",
     path: "/certificados",
     icon: <Icon icon="lucide:shield-check" width="24" height="24" />,
+    submenu: true,
+    subMenuItems: [
+      { title: "Digitais", path: "/certificados" },
+      { title: "Certificações", path: "/certificacoes/controlecertificados" },
+    ],
   },
   {
     title: "Configurações",
