@@ -1,5 +1,3 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use server";
 
 import { createAdminClient } from "@/lib/appwrite";
@@ -12,11 +10,11 @@ export const createNotification = async (data: {
   imp?: string;
   importador?: string;
   lida?: boolean;
+  userId: string; // Agora sempre exige o userId
 }) => {
   try {
     const { databases } = await createAdminClient();
 
-    // Verifica se já existe uma notificação excluída similar
     const existingNotification = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.notificationsCollectionId,
@@ -24,6 +22,7 @@ export const createNotification = async (data: {
         Query.equal("text", data.text || ""),
         Query.equal("imp", data.imp || ""),
         Query.equal("importador", data.importador || ""),
+        Query.equal("userId", data.userId),
         Query.equal("deleted", true),
       ]
     );
@@ -81,14 +80,18 @@ export const updateNotification = async (
 };
 
 // Retorna a lista de todas as notificações (excluindo as deletadas)
-export const getNotifications = async () => {
+export const getNotifications = async (userId: string) => {
   try {
     const { databases } = await createAdminClient();
 
     const result = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.notificationsCollectionId,
-      [Query.equal("deleted", false), Query.limit(20)] // Exclui as notificações deletadas
+      [
+        Query.equal("deleted", false),
+        Query.equal("userId", userId),
+        Query.limit(20),
+      ]
     );
 
     return result.documents;
@@ -103,7 +106,6 @@ export const deleteNotification = async (id: string) => {
   try {
     const { databases } = await createAdminClient();
 
-    // Marca a notificação como excluída
     const result = await databases.updateDocument(
       appwriteConfig.databaseId,
       appwriteConfig.notificationsCollectionId,
@@ -119,9 +121,9 @@ export const deleteNotification = async (id: string) => {
 };
 
 // Marca todas as notificações como lidas
-export const markAllNotificationsAsRead = async () => {
+export const markAllNotificationsAsRead = async (userId: string) => {
   try {
-    const notifications = await getNotifications();
+    const notifications = await getNotifications(userId);
 
     const { databases } = await createAdminClient();
     const updatePromises = notifications.map((notification) =>
@@ -142,14 +144,18 @@ export const markAllNotificationsAsRead = async () => {
 };
 
 // Retorna a quantidade de notificações não lidas
-export const getUnreadNotificationsCount = async () => {
+export const getUnreadNotificationsCount = async (userId: string) => {
   try {
     const { databases } = await createAdminClient();
 
     const result = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.notificationsCollectionId,
-      [Query.equal("lida", false), Query.equal("deleted", false)] // Exclui as notificações deletadas
+      [
+        Query.equal("userId", userId),
+        Query.equal("lida", false),
+        Query.equal("deleted", false),
+      ]
     );
 
     return result.total;
@@ -160,7 +166,7 @@ export const getUnreadNotificationsCount = async () => {
 };
 
 // Retorna o timestamp mais recente de atualização das notificações
-export const getBackendLastUpdated = async () => {
+export const getBackendLastUpdated = async (userId: string) => {
   try {
     const { databases } = await createAdminClient();
 
@@ -168,10 +174,11 @@ export const getBackendLastUpdated = async () => {
       appwriteConfig.databaseId,
       appwriteConfig.notificationsCollectionId,
       [
+        Query.equal("userId", userId),
         Query.equal("deleted", false),
         Query.orderDesc("$updatedAt"),
         Query.limit(1),
-      ] // Exclui as deletadas
+      ]
     );
 
     if (result.documents.length > 0) {

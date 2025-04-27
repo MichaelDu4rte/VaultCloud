@@ -19,6 +19,7 @@ import {
   markAllNotificationsAsReadBatch,
 } from "@/lib/actions/notification.actions";
 import { getQuantidadeImpsDeferindoHoje } from "@/lib/actions/li.actions";
+import { getAccountId } from "@/lib/actions/user.actions";
 
 type Notification = {
   $id: string;
@@ -36,55 +37,66 @@ export function NotificationMenu() {
     const init = async () => {
       setIsLoading(true);
       try {
+        const userId = await getAccountId();
+        if (!userId) {
+          console.error("User ID não encontrado");
+          return;
+        }
+
+        // Verificar se já existem notificações armazenadas e se não precisam ser atualizadas
         const cachedNotifications = Cookies.get("notifications");
         const lastUpdated = Cookies.get("notifications_last_updated");
 
         if (cachedNotifications && lastUpdated) {
           setNotifications(JSON.parse(cachedNotifications));
-        }
+        } else {
+          const backendTimestamp = await getBackendLastUpdated(userId);
 
-        const backendTimestamp = await getBackendLastUpdated();
-        if (!lastUpdated || backendTimestamp !== lastUpdated) {
-          const fetchedNotifications = await getNotifications();
+          if (!lastUpdated || backendTimestamp !== lastUpdated) {
+            // Carregar novas notificações do backend
+            const fetchedNotifications = await getNotifications(userId);
 
-          const quantidade = await getQuantidadeImpsDeferindoHoje();
-
-          if (quantidade > 0) {
-            try {
-              const createdNotification = await createNotification({
-                text: `Quantidade de LIs deferindo hoje: ${quantidade}`,
-              });
-              fetchedNotifications.push(createdNotification);
-            } catch (error) {
-              console.error(
-                "Erro ao criar notificação de quantidade de LIs:",
-                error
-              );
+            const quantidade = await getQuantidadeImpsDeferindoHoje();
+            if (quantidade > 0) {
+              try {
+                const createdNotification = await createNotification({
+                  text: `Quantidade de LIs deferindo hoje: ${quantidade}`,
+                  userId,
+                });
+                fetchedNotifications.push(createdNotification);
+              } catch (error) {
+                console.error(
+                  "Erro ao criar notificação de quantidade de LIs:",
+                  error
+                );
+              }
             }
-          }
 
-          const mappedNotifications = fetchedNotifications.map((doc) => ({
-            $id: doc.$id,
-            text: doc.text,
-            imp: doc.imp,
-            importador: doc.importador,
-            lida: doc.lida,
-          }));
+            const mappedNotifications = fetchedNotifications.map((doc) => ({
+              $id: doc.$id,
+              text: doc.text,
+              imp: doc.imp,
+              importador: doc.importador,
+              lida: doc.lida,
+            }));
 
-          const sortedNotifications = [...mappedNotifications].sort((a, b) => {
-            if (!a.lida && b.lida) return -1;
-            if (a.lida && !b.lida) return 1;
-            return 0;
-          });
+            const sortedNotifications = [...mappedNotifications].sort(
+              (a, b) => {
+                if (!a.lida && b.lida) return -1;
+                if (a.lida && !b.lida) return 1;
+                return 0;
+              }
+            );
 
-          setNotifications(sortedNotifications);
-          Cookies.set("notifications", JSON.stringify(sortedNotifications), {
-            expires: 1,
-          });
-          if (backendTimestamp) {
-            Cookies.set("notifications_last_updated", backendTimestamp, {
+            setNotifications(sortedNotifications);
+            Cookies.set("notifications", JSON.stringify(sortedNotifications), {
               expires: 1,
             });
+            if (backendTimestamp) {
+              Cookies.set("notifications_last_updated", backendTimestamp, {
+                expires: 1,
+              });
+            }
           }
         }
       } catch (error) {
@@ -101,14 +113,18 @@ export function NotificationMenu() {
 
   const markAllAsRead = async () => {
     try {
-      // Filtrar notificações não lidas
+      const userId = await getAccountId();
+      if (!userId) {
+        console.error("User ID não encontrado");
+        return;
+      }
+
       const unreadNotifications = notifications.filter((n) => !n.lida);
       const unreadIds = unreadNotifications.map((n) => n.$id);
 
       if (unreadIds.length > 0) {
         await markAllNotificationsAsReadBatch(unreadIds);
 
-        // Atualizar o estado localmente
         const updatedNotifications = notifications.map((n) =>
           unreadIds.includes(n.$id) ? { ...n, lida: true } : n
         );
@@ -125,6 +141,12 @@ export function NotificationMenu() {
 
   const clearAll = async () => {
     try {
+      const userId = await getAccountId();
+      if (!userId) {
+        console.error("User ID não encontrado");
+        return;
+      }
+
       for (const notification of notifications) {
         await deleteNotificationAPI(notification.$id);
       }
@@ -138,13 +160,18 @@ export function NotificationMenu() {
 
   const markAsRead = async (id: string) => {
     try {
+      const userId = await getAccountId();
+      if (!userId) {
+        console.error("User ID não encontrado");
+        return;
+      }
+
       await updateNotification(id, { lida: true });
       const updatedNotifications = notifications.map((n) =>
         n.$id === id ? { ...n, lida: true } : n
       );
       setNotifications(updatedNotifications);
 
-      // Atualizar o cache no cookie
       Cookies.set("notifications", JSON.stringify(updatedNotifications), {
         expires: 1,
       });
@@ -155,11 +182,16 @@ export function NotificationMenu() {
 
   const deleteNotification = async (id: string) => {
     try {
+      const userId = await getAccountId();
+      if (!userId) {
+        console.error("User ID não encontrado");
+        return;
+      }
+
       await deleteNotificationAPI(id);
       const updatedNotifications = notifications.filter((n) => n.$id !== id);
       setNotifications(updatedNotifications);
 
-      // Atualizar o cache no cookie
       Cookies.set("notifications", JSON.stringify(updatedNotifications), {
         expires: 1,
       });

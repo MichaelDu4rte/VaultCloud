@@ -340,15 +340,11 @@ export const getImpsComLIsDeferindoHoje = async () => {
 
     const dataDeHoje = formatarData(hoje);
 
-    console.log("Data de hoje formatada:", dataDeHoje);
-
     const result = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.licencaImportacaoCollectionId,
       [Query.equal("previsaoDeferimento", dataDeHoje), Query.limit(70)]
     );
-
-    console.log("Resultado da consulta:", result);
 
     if (result.total > 0) {
       const impsComLIsDeferindoHoje = result.documents.map((doc) => ({
@@ -356,12 +352,9 @@ export const getImpsComLIsDeferindoHoje = async () => {
         importador: doc.importador,
       }));
 
-      console.log("LIs deferindo hoje:", impsComLIsDeferindoHoje);
-
       return impsComLIsDeferindoHoje;
     }
 
-    console.log("Nenhuma LI com deferimento para hoje foi encontrada.");
     return [];
   } catch (error) {
     console.error("Erro ao buscar imps com LIs deferindo hoje:", error);
@@ -411,7 +404,7 @@ export const getQuantidadeImpsDeferindoHoje = async () => {
       lastExecutionDate: dataDeHoje,
     };
 
-    return result.total; // Retorna o resultado da requisição
+    return result.total;
   } catch (error) {
     console.error("Erro ao buscar quantidade de imps deferindo hoje:", error);
     throw error;

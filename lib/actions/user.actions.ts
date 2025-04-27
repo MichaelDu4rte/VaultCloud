@@ -228,3 +228,16 @@ export const updateUser = async ({
     handleError(error, "Erro ao atualizar usuário");
   }
 };
+
+// Obtém o ID da conta do usuário autenticado
+export const getAccountId = async () => {
+  try {
+    const { account } = await createSessionClient();
+    const session = await account.get();
+
+    return session.$id;
+  } catch (error) {
+    console.error("Failed to get accountId", error);
+    return null;
+  }
+};
