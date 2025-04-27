@@ -21,6 +21,7 @@ import {
   getQuantidadeLicencasImportacaoFeitasNoMes,
 } from "@/lib/actions/li.actions";
 import { FaCheckCircle, FaClock, FaThumbsUp } from "react-icons/fa";
+import { Skeleton } from "@/components/ui/skeleton";
 
 ChartJS.register(BarElement, CategoryScale, LinearScale);
 
@@ -88,76 +89,74 @@ const Home = () => {
     useState<number>(0);
   const [quantidadeLicencasDeferidas, setQuantidadeLicencasDeferidas] =
     useState<number>(0);
+  const [isLoading, setIsLoading] = useState(true); // Estado de carregamento
+
+  // Função para salvar dados nos cookies
+  const setCookie = (name: string, value: string, days: number) => {
+    const date = new Date();
+    date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+    document.cookie = `${name}=${value}; expires=${date.toUTCString()}; path=/`;
+  };
+
+  // Função para buscar dados dos cookies
+  const getCookie = (name: string): string | null => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()?.split(";").shift() || null;
+    return null;
+  };
 
   useEffect(() => {
     const fetchLicencas = async () => {
-      try {
-        const licencas = await getLicencasImportacaoDeferidasHoje();
-        const formatadas = licencas.map((item: LicencaImportacao) => ({
-          ...item,
-          previsaoDeferimento: item.previsaoDeferimento || "N/A",
-          status: item.situacao || "Indefinido",
-        }));
-        setLiData(formatadas);
-      } catch (error) {
-        console.error(
-          "Erro ao buscar Licenças de Importação deferidas hoje:",
-          error
-        );
+      const today = new Date().toISOString().split("T")[0];
+      const cachedData = getCookie("licencasDeferidasHoje");
+      const cachedDate = getCookie("licencasDeferidasHojeDate");
+
+      if (cachedData && cachedDate === today) {
+        const licencas = JSON.parse(cachedData);
+        setLiData(licencas);
+      } else {
+        try {
+          const licencas = await getLicencasImportacaoDeferidasHoje();
+          const formatadas = licencas.map((item: LicencaImportacao) => ({
+            ...item,
+            previsaoDeferimento: item.previsaoDeferimento || "N/A",
+            status: item.situacao || "Indefinido",
+          }));
+
+          setLiData(formatadas);
+
+          setCookie("licencasDeferidasHoje", JSON.stringify(formatadas), 1);
+          setCookie("licencasDeferidasHojeDate", today, 1);
+        } catch (error) {
+          console.error(
+            "Erro ao buscar Licenças de Importação deferidas hoje:",
+            error
+          );
+        }
       }
+      setIsLoading(false); // Finaliza o carregamento
     };
 
     fetchLicencas();
   }, []);
 
   useEffect(() => {
-    const fetchLicencas = async () => {
+    const fetchQuantidades = async () => {
       try {
-        const quantidade = await getQuantidadeLicencasImportacaoFeitasNoMes();
-        setQuantidadeLicencas(quantidade);
+        const feitas = await getQuantidadeLicencasImportacaoFeitasNoMes();
+        const emAnalise = await getQuantidadeLicencasImportacaoEmAnaliseNoMes();
+        const deferidas = await getQuantidadeLicencasImportacaoDeferidasNoMes();
+
+        setQuantidadeLicencas(feitas);
+        setQuantidadeLicencasEmAnalise(emAnalise);
+        setQuantidadeLicencasDeferidas(deferidas);
       } catch (error) {
-        console.error(
-          "Erro ao buscar quantidade de Licenças de Importação no mês atual:",
-          error
-        );
+        console.error("Erro ao buscar quantidades de Licenças:", error);
       }
     };
 
-    fetchLicencas();
-  }, []);
-
-  useEffect(() => {
-    const fetchLicencas = async () => {
-      try {
-        const quantidade =
-          await getQuantidadeLicencasImportacaoEmAnaliseNoMes();
-        setQuantidadeLicencasEmAnalise(quantidade);
-      } catch (error) {
-        console.error(
-          "Erro ao buscar quantidade de Licenças de Importação em análise no mês atual:",
-          error
-        );
-      }
-    };
-
-    fetchLicencas();
-  }, []);
-
-  useEffect(() => {
-    const fetchLicencas = async () => {
-      try {
-        const quantidade =
-          await getQuantidadeLicencasImportacaoDeferidasNoMes();
-        setQuantidadeLicencasDeferidas(quantidade);
-      } catch (error) {
-        console.error(
-          "Erro ao buscar quantidade de Licenças de Importação em análise no mês atual:",
-          error
-        );
-      }
-    };
-
-    fetchLicencas();
+    fetchQuantidades();
   }, []);
 
   const statusBadge = (status: string) => {
@@ -208,66 +207,52 @@ const Home = () => {
             </h2>
           </div>
           <div className="h-64 w-full">
-            {" "}
-            <Bar data={salesData} options={options} />
+            {isLoading ? (
+              <Skeleton className="size-full" />
+            ) : (
+              <Bar data={salesData} options={options} />
+            )}
           </div>
         </motion.div>
 
         <div className="flex flex-col gap-4">
-          <motion.div
-            variants={fadeIn}
-            initial="hidden"
-            animate="visible"
-            className="flex items-center justify-between rounded-2xl p-4 shadow-md transition hover:shadow-lg dark:border dark:border-white/20 dark:bg-zinc-900/80 dark:text-white"
-          >
-            <div>
-              <p className="text-xs text-gray-500 dark:text-light-200">
-                Lis FEITAS NO MÊS
-              </p>
-              <h3 className="text-xl font-bold">{quantidadeLicencas}</h3>
-            </div>
-            <div className="text-3xl text-blue">
-              <FaCheckCircle />
-            </div>
-          </motion.div>
-
-          <motion.div
-            variants={fadeIn}
-            initial="hidden"
-            animate="visible"
-            className="flex items-center justify-between rounded-2xl p-4 shadow-md transition hover:shadow-lg dark:border dark:border-white/20 dark:bg-zinc-900/80"
-          >
-            <div>
-              <p className="text-xs text-gray-500 dark:text-light-200">
-                LIS A DEFERIR
-              </p>
-              <h3 className="text-xl font-bold">
-                {quantidadeLicencasEmAnalise}
-              </h3>
-            </div>
-            <div className="text-3xl text-blue">
-              <FaClock />
-            </div>
-          </motion.div>
-
-          <motion.div
-            variants={fadeIn}
-            initial="hidden"
-            animate="visible"
-            className="flex items-center justify-between rounded-2xl p-4 shadow-md transition hover:shadow-lg dark:border dark:border-white/20 dark:bg-zinc-900/80"
-          >
-            <div>
-              <p className="text-xs text-gray-500 dark:text-light-200">
-                LIS DEFERIDAS
-              </p>
-              <h3 className="text-xl font-bold">
-                {quantidadeLicencasDeferidas}
-              </h3>
-            </div>
-            <div className="text-3xl text-blue">
-              <FaThumbsUp />
-            </div>
-          </motion.div>
+          {isLoading
+            ? Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-20 w-full rounded-2xl" />
+              ))
+            : [
+                {
+                  label: "PROCESSOS FEITOS NO MÊS",
+                  value: quantidadeLicencas,
+                  icon: <FaCheckCircle className="text-3xl text-blue" />,
+                },
+                {
+                  label: "LIS A DEFERIR",
+                  value: quantidadeLicencasEmAnalise,
+                  icon: <FaClock className="text-3xl text-blue" />,
+                },
+                {
+                  label: "LIS DEFERIDAS",
+                  value: quantidadeLicencasDeferidas,
+                  icon: <FaThumbsUp className="text-3xl text-blue" />,
+                },
+              ].map((item, i) => (
+                <motion.div
+                  key={i}
+                  variants={fadeIn}
+                  initial="hidden"
+                  animate="visible"
+                  className="flex items-center justify-between rounded-2xl p-4 shadow-md transition hover:shadow-lg dark:border dark:border-white/20 dark:bg-zinc-900/80 dark:text-white"
+                >
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-light-200">
+                      {item.label}
+                    </p>
+                    <h3 className="text-xl font-bold">{item.value}</h3>
+                  </div>
+                  <div>{item.icon}</div>
+                </motion.div>
+              ))}
         </div>
       </div>
 
@@ -283,50 +268,52 @@ const Home = () => {
             <DocumentTextIcon className="size-6 text-indigo-500" />
             Licenças de Importação Próximas de Deferimento
           </h2>
-          <p className="text-sm text-gray-600 dark:text-light-200">
-            Abaixo estão listadas as Licenças de Importação que estão previstas
-            para deferimento hoje ou em breve.
-          </p>
         </div>
         <div className="overflow-auto">
-          <table className="w-full min-w-[700px] text-left text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 text-gray-500 dark:text-light-200">
-                <th className="pb-3">IMP</th>
-                <th>Importador</th>
-                <th>Número da LI</th>
-                <th>Status</th>
-                <th>Data de Deferimento</th>
-              </tr>
-            </thead>
-            <tbody>
-              {liData.map((item, i) => (
-                <motion.tr
-                  key={i}
-                  variants={fadeIn}
-                  initial="hidden"
-                  animate="visible"
-                  className="border-b border-gray-100 hover:bg-gray-50 dark:hover:bg-zinc-900"
-                >
-                  <td className="py-3 font-medium text-gray-800 dark:text-light-300">
-                    {item.imp}
-                  </td>
-                  <td className="py-3 text-gray-700 dark:text-light-300">
-                    {item.importador}
-                  </td>
-                  <td className="py-3 text-gray-700 dark:text-light-300">
-                    {item.numeroLi}
-                  </td>
-                  <td className="py-3 uppercase">
-                    {statusBadge(item.situacao)}
-                  </td>
-                  <td className="py-3 text-gray-500 dark:text-light-300">
-                    {item.previsaoDeferimento}
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
+          {isLoading ? (
+            Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="mb-2 h-10 w-full rounded-lg" />
+            ))
+          ) : (
+            <table className="w-full min-w-[700px] text-left text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 text-gray-500 dark:border-white/20 dark:text-light-200">
+                  <th className="pb-3">IMP</th>
+                  <th>Importador</th>
+                  <th>Número da LI</th>
+                  <th>Status</th>
+                  <th>Data de Deferimento</th>
+                </tr>
+              </thead>
+              <tbody>
+                {liData.map((item, i) => (
+                  <motion.tr
+                    key={i}
+                    variants={fadeIn}
+                    initial="hidden"
+                    animate="visible"
+                    className="border-b border-gray-100 hover:bg-gray-50 dark:border-white/20 dark:hover:bg-zinc-900"
+                  >
+                    <td className="py-3 font-medium text-gray-800 dark:text-light-300">
+                      {item.imp}
+                    </td>
+                    <td className="py-3 text-gray-700 dark:text-light-300">
+                      {item.importador}
+                    </td>
+                    <td className="py-3 text-gray-700 dark:text-light-300">
+                      {item.numeroLi}
+                    </td>
+                    <td className="py-3 uppercase">
+                      {statusBadge(item.situacao)}
+                    </td>
+                    <td className="py-3 text-gray-500 dark:text-light-300">
+                      {item.previsaoDeferimento}
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </motion.div>
     </div>
