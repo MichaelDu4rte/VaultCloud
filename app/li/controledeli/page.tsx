@@ -314,6 +314,41 @@ const Page = () => {
     return "text-gray dark:text-white";
   };
 
+  function formatColumnName(coluna: string) {
+    switch (coluna) {
+      case "imp":
+        return "Imp";
+      case "importador":
+        return "Importador";
+      case "referenciaDoCliente":
+        return "Referência";
+      case "numeroOrquestra":
+        return "Nº Orquestra";
+      case "numeroLi":
+        return "Número LI";
+      case "ncm":
+        return "Ncm";
+      case "dataRegistroLI":
+        return "Data de Registro LI";
+      case "dataInclusaoOrquestra":
+        return "Data de Pagamento";
+      case "previsaoDeferimento":
+        return "Previsão Deferimento";
+      case "situacao":
+        return "Situação";
+      case "observacoes":
+        return "Observações";
+      default:
+        return (
+          coluna.charAt(0).toUpperCase() +
+          coluna
+            .slice(1)
+            .replace(/([A-Z])/g, " $1")
+            .trim()
+        );
+    }
+  }
+
   const [colunasVisiveis, setColunasVisiveis] = useState(() => {
     const savedColumns = getCookie("colunasVisiveis");
     if (savedColumns) {
@@ -323,14 +358,14 @@ const Page = () => {
         imp: true,
         importador: true,
         referenciaDoCliente: true,
-        numeroOrquestra: true,
+        numeroOrquestra: false,
         numeroLi: true,
-        ncm: true,
-        dataRegistroLI: true,
+        ncm: false,
+        dataRegistroLI: false,
         dataInclusaoOrquestra: true,
         previsaoDeferimento: true,
         situacao: true,
-        observacoes: true,
+        observacoes: false,
       };
     }
   });
@@ -423,7 +458,7 @@ const Page = () => {
                         className="mr-5 size-5"
                       />
                       <span className="capitalize">
-                        {coluna.replace(/([A-Z])/g, " $1").trim()}
+                        {formatColumnName(coluna)}
                       </span>
                     </div>
                   </SelectItem>
@@ -620,7 +655,7 @@ const Page = () => {
                           onChange={(e) =>
                             handleChange("imp", e.target.value, item.$id)
                           }
-                          className="w-full sm:w-[120px]"
+                          className="w-full sm:w-[110px]"
                         />
                       </TableCell>
                     )}
@@ -646,7 +681,7 @@ const Page = () => {
                               item.$id
                             )
                           }
-                          className="w-full"
+                          className="w-full sm:w-[110px]"
                         />
                       </TableCell>
                     )}
@@ -661,7 +696,7 @@ const Page = () => {
                               item.$id
                             )
                           }
-                          className="w-full"
+                          className="w-full sm:w-[110px]"
                         />
                       </TableCell>
                     )}
@@ -672,7 +707,7 @@ const Page = () => {
                           onChange={(e) =>
                             handleChange("numeroLi", e.target.value, item.$id)
                           }
-                          className="w-full"
+                          className="w-full sm:w-[120px]"
                         />
                       </TableCell>
                     )}
@@ -683,7 +718,7 @@ const Page = () => {
                           onChange={(e) =>
                             handleChange("ncm", e.target.value, item.$id)
                           }
-                          className="w-full"
+                          className="w-full sm:w-[110px]"
                         />
                       </TableCell>
                     )}
@@ -699,7 +734,7 @@ const Page = () => {
                               item.$id
                             )
                           }
-                          className="w-full"
+                          className="w-full sm:w-[110px]"
                         />
                       </TableCell>
                     )}
@@ -715,7 +750,7 @@ const Page = () => {
                               item.$id
                             )
                           }
-                          className="w-full"
+                          className="w-full sm:w-[130px]"
                         />
                       </TableCell>
                     )}
@@ -725,7 +760,7 @@ const Page = () => {
                           type="text"
                           value={item.previsaoDeferimento}
                           readOnly
-                          className="w-full"
+                          className="w-full sm:w-[130px]"
                         />
                       </TableCell>
                     )}

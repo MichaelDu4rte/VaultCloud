@@ -284,7 +284,6 @@ const Page = () => {
 
       <div className="max-h-[550px] overflow-auto rounded-2xl border">
         {isLoading ? (
-          // Skeleton exibido durante o carregamento
           <div>
             {Array.from({ length: 5 }).map((_, index) => (
               <div key={index} className="flex gap-4 p-4">
@@ -319,7 +318,9 @@ const Page = () => {
               {filteredCertifications.map((cert) => (
                 <TableRow key={cert.$id}>
                   <TableCell>{cert.referencia}</TableCell>
-                  <TableCell>{cert.nomeComercial}</TableCell>
+                  <TableCell className="w-[250px]">
+                    {cert.nomeComercial}
+                  </TableCell>
                   <TableCell>{cert.certificado}</TableCell>
                   <TableCell>{cert.validade}</TableCell>
                   <TableCell>{cert.manutencaoData}</TableCell>
