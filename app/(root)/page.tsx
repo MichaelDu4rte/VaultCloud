@@ -227,12 +227,12 @@ const Home = () => {
                   icon: <FaCheckCircle className="text-3xl text-blue" />,
                 },
                 {
-                  label: "LIS A DEFERIR",
+                  label: "LIS A DEFERIR NO MÊS",
                   value: quantidadeLicencasEmAnalise,
                   icon: <FaClock className="text-3xl text-blue" />,
                 },
                 {
-                  label: "LIS DEFERIDAS",
+                  label: "LIS DEFERIDAS NO MÊS",
                   value: quantidadeLicencasDeferidas,
                   icon: <FaThumbsUp className="text-3xl text-blue" />,
                 },
