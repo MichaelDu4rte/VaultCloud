@@ -107,54 +107,39 @@ const Home = () => {
   };
 
   useEffect(() => {
-  const fetchLicencas = async () => {
-    const today = new Date().toISOString().split("T")[0];
-    const cachedData = getCookie("licencasDeferidasHoje");
-    const cachedDate = getCookie("licencasDeferidasHojeDate");
+    const fetchLicencas = async () => {
+      const today = new Date().toISOString().split("T")[0];
+      const cachedData = getCookie("licencasDeferidasHoje");
+      const cachedDate = getCookie("licencasDeferidasHojeDate");
 
-    
-    const formatDate = (dateString: string): string => {
-      if (!dateString) return "N/A";
-    
-      const [year, month, day] = dateString.split("-");
-      const date = new Date(Number(year), Number(month) - 1, Number(day));
-      
-      const formattedDay = String(date.getDate()).padStart(2, "0");
-      const formattedMonth = String(date.getMonth() + 1).padStart(2, "0");
-      const formattedYear = date.getFullYear();
-    
-      return `${formattedDay}/${formattedMonth}/${formattedYear}`;
+      if (cachedData && cachedDate === today) {
+        const licencas = JSON.parse(cachedData);
+        setLiData(licencas);
+      } else {
+        try {
+          const licencas = await getLicencasImportacaoDeferidasHoje();
+          const formatadas = licencas.map((item: LicencaImportacao) => ({
+            ...item,
+            previsaoDeferimento: item.previsaoDeferimento || "N/A",
+            status: item.situacao || "Indefinido",
+          }));
+
+          setLiData(formatadas);
+
+          setCookie("licencasDeferidasHoje", JSON.stringify(formatadas), 1);
+          setCookie("licencasDeferidasHojeDate", today, 1);
+        } catch (error) {
+          console.error(
+            "Erro ao buscar Licenças de Importação deferidas hoje:",
+            error
+          );
+        }
+      }
+      setIsLoading(false); // Finaliza o carregamento
     };
 
-
-    if (cachedData && cachedDate === today) {
-      const licencas = JSON.parse(cachedData);
-      setLiData(licencas);
-    } else {
-      try {
-        const licencas = await getLicencasImportacaoDeferidasHoje();
-        const formatadas = licencas.map((item: LicencaImportacao) => ({
-          ...item,
-          previsaoDeferimento: formatDate(item.previsaoDeferimento || ""), 
-          status: item.situacao || "Indefinido",
-        }));
-
-        setLiData(formatadas);
-
-        setCookie("licencasDeferidasHoje", JSON.stringify(formatadas), 1);
-        setCookie("licencasDeferidasHojeDate", today, 1);
-      } catch (error) {
-        console.error(
-          "Erro ao buscar Licenças de Importação deferidas hoje:",
-          error
-        );
-      }
-    }
-    setIsLoading(false); // Finaliza o carregamento
-  };
-
-  fetchLicencas();
-}, []);
+    fetchLicencas();
+  }, []);
 
   useEffect(() => {
     const fetchQuantidades = async () => {
