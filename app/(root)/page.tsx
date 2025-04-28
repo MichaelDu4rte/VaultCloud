@@ -115,13 +115,17 @@ const Home = () => {
     
     const formatDate = (dateString: string): string => {
       if (!dateString) return "N/A";
-
-      const date = new Date(dateString);
-      const day = String(date.getDate()).padStart(2, "0");
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const year = date.getFullYear();
-      return `${day}/${month}/${year}`;
+    
+      const [year, month, day] = dateString.split("-");
+      const date = new Date(Number(year), Number(month) - 1, Number(day));
+      
+      const formattedDay = String(date.getDate()).padStart(2, "0");
+      const formattedMonth = String(date.getMonth() + 1).padStart(2, "0");
+      const formattedYear = date.getFullYear();
+    
+      return `${formattedDay}/${formattedMonth}/${formattedYear}`;
     };
+
 
     if (cachedData && cachedDate === today) {
       const licencas = JSON.parse(cachedData);
