@@ -41,6 +41,14 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async rewrites() {
+    return [
+      {
+        source: "/api/processos",
+        destination: "http://179.127.172.186:44001/api/processos", // Proxy para o seu endpoint
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -14,8 +14,8 @@ export const SIDENAV_ITEMS: SideNavItem[] = [
     icon: <Icon icon="lucide:file-cog" width="24" height="24" />,
     submenu: true,
     subMenuItems: [
+      { title: "Processos", path: "/li/processos" },
       { title: "Controle de li", path: "/li/controledeli" },
-      { title: "Recebimento", path: "/li/recebimentodeli" },
     ],
   },
   {
