@@ -10,6 +10,7 @@ export const appwriteConfig = {
     process.env.NEXT_PUBLIC_APPWRITE_CERTIFICACOES_COLLECTION!,
   notificationsCollectionId:
     process.env.NEXT_PUBLIC_APPWRITE_NOTIFICATION_COLLECTION!,
+  orquestraCollectionId: process.env.NEXT_PUBLIC_APPWRITE_ORQUESTRA_COLLECTION!,
 
   bucketId: process.env.NEXT_PUBLIC_APPWRITE_BUCKET!,
   secretKey: process.env.NEXT_APPWRITE_SECRET!,
