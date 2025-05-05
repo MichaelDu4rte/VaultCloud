@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Table,
   TableBody,
@@ -31,10 +31,14 @@ const Page = () => {
   const [orquestra, setOrquestra] = useState<any[]>([]);
   const [filteredProcessos, setFilteredProcessos] = useState<any[]>([]);
   const [filteredOrquestra, setFilteredOrquestra] = useState<any[]>([]);
-  const [viewType, setViewType] = useState<"table" | "list">("table");
+  const [viewType, setViewType] = useState<"table" | "list" | "liconferencia">(
+    "table"
+  );
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<"lis" | "orquestra">("lis");
+  const [activeTab, setActiveTab] = useState<
+    "lis" | "orquestra" | "liconferencia"
+  >("lis");
   const [sortField, setSortField] = useState("status");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
@@ -139,6 +143,9 @@ const Page = () => {
   };
 
   // Função para lidar com api processos
+  const prevProcessosRef = useRef<Processo[]>([]);
+
+  // api processos
   useEffect(() => {
     const fetchProcessos = async () => {
       try {
@@ -157,12 +164,23 @@ const Page = () => {
         }
 
         const data = await response.json();
-        const processosData = data.dados || [];
+        const processosData: Processo[] = data.dados || [];
+
         setProcessos(processosData);
         setFilteredProcessos(processosData);
 
+        const newImps = processosData.map((p) => p.Processo);
+        const prevImps = prevProcessosRef.current.map((p) => p.Processo);
+
+        // Detecta quais processos foram removidos
+        const removedImps = prevImps.filter((imp) => !newImps.includes(imp));
+        const removedProcessos = prevProcessosRef.current.filter((p) =>
+          removedImps.includes(p.Processo)
+        );
+
+        // Envia os dados dos processos removidos para createOrquestra
         await Promise.all(
-          processosData.map(async (processo: Processo) => {
+          removedProcessos.map(async (processo) => {
             const orquestraData = {
               imp: processo.Processo || "",
               referencia: processo.Fatura || "",
@@ -175,6 +193,9 @@ const Page = () => {
             await createOrquestra(orquestraData);
           })
         );
+
+        // Atualiza o estado e o ref com os novos processos
+        prevProcessosRef.current = processosData;
       } catch (err: any) {
         console.error("Erro ao buscar processos:", err.message);
       } finally {
@@ -182,7 +203,13 @@ const Page = () => {
       }
     };
 
+    // Chamada inicial
     fetchProcessos();
+
+    // Define intervalo de 5 minutos (300000 ms)
+    const intervalId = setInterval(fetchProcessos, 5 * 60 * 1000);
+
+    return () => clearInterval(intervalId); // Limpeza do intervalo ao desmontar
   }, []);
 
   // Função para lidar db orquestra
@@ -202,6 +229,19 @@ const Page = () => {
 
     fetchOrquestras();
   }, []);
+
+  const isLiconferencia = (status: string) => {
+    return ["Refazer", "Conferindo", "Pendente"].includes(status);
+  };
+
+  const isOrquestra = (status: string) => {
+    return [
+      "Fazer Orquestra",
+      "Aguardando informação",
+      "Em andamento",
+      "Finalizado",
+    ].includes(status);
+  };
 
   return (
     <div className="space-y-10 rounded-2xl bg-white p-8 shadow-md dark:border dark:border-white/20 dark:bg-zinc-900/80">
@@ -251,6 +291,17 @@ const Page = () => {
           LIS a fazer
         </button>
         <button
+          onClick={() => setActiveTab("liconferencia")}
+          className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
+            activeTab === "liconferencia"
+              ? "bg-primary text-white shadow-sm dark:text-black"
+              : "text-muted-foreground hover:bg-muted dark:text-[#aaaaaa] dark:hover:bg-[#2a2a2a]"
+          }`}
+        >
+          Conferência LI
+        </button>
+
+        <button
           onClick={() => setActiveTab("orquestra")}
           className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
             activeTab === "orquestra"
@@ -262,8 +313,7 @@ const Page = () => {
         </button>
       </div>
 
-      {/* Conteúdo das abas */}
-      {activeTab === "lis" ? (
+      {activeTab === "lis" || activeTab === "liconferencia" ? (
         <div className="max-h-[550px] overflow-auto rounded-2xl border">
           {isLoading ? (
             <div className="space-y-4">
@@ -272,112 +322,225 @@ const Page = () => {
               <Skeleton className="h-12 w-full" />
               <Skeleton className="h-12 w-full" />
             </div>
-          ) : viewType === "table" ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Imp</TableHead>
-                  <TableHead>Ref. Cliente</TableHead>
-                  <TableHead>Exportador</TableHead>
-                  <TableHead>Importador</TableHead>
-                  <TableHead>Recebimento</TableHead>
-                  <TableHead>Prev. Chegada</TableHead>
-                  <TableHead>Destino</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredProcessos.map((item, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{item.Processo || "-"}</TableCell>
-                    <TableCell>{item.Fatura || "-"}</TableCell>
-                    <TableCell>
-                      <span
-                        className="block max-w-[150px] truncate"
-                        title={item.Cliente}
-                      >
-                        {item.Cliente?.split(" ").slice(0, 8).join(" ") || "-"}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className="block max-w-[150px] truncate"
-                        title={item.Importador}
-                      >
-                        {item.Importador?.split(" ").slice(0, 8).join(" ") ||
-                          "-"}
-                      </span>
-                    </TableCell>
-
-                    <TableCell>{item.DataCadastro || "-"}</TableCell>
-                    <TableCell>{item.DataPrevisaoETA || "-"}</TableCell>
-                    <TableCell>
-                      <Badge
-                        className={`rounded-lg px-3 py-1 text-sm text-white ${
-                          item.Destino?.toLowerCase() === "navegantes"
-                            ? "bg-[#2ecc71]"
-                            : ["sao francisco", "itapoa - sc"].includes(
-                                  item.Destino?.toLowerCase()
-                                )
-                              ? "bg-[#e91e63]"
-                              : item.Destino?.toLowerCase() === "santos"
-                                ? "bg-[#333333]"
-                                : "bg-[#7f8c8d]"
-                        }`}
-                      >
-                        {item.Destino}
-                      </Badge>
-                    </TableCell>
+          ) : activeTab === "lis" ? (
+            viewType === "table" ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Imp</TableHead>
+                    <TableHead>Ref. Cliente</TableHead>
+                    <TableHead>Exportador</TableHead>
+                    <TableHead>Importador</TableHead>
+                    <TableHead>Recebimento</TableHead>
+                    <TableHead>Prev. Chegada</TableHead>
+                    <TableHead>Destino</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : filteredProcessos.length === 0 ? (
-            <div className="py-10 text-center text-xl text-gray-500">
-              Nenhum processo encontrado.
-            </div>
-          ) : (
-            filteredProcessos.map((item, index) => (
-              <div
-                key={index}
-                className="mb-5 flex flex-col gap-2 rounded-lg bg-gray-50 p-4 shadow-sm dark:bg-zinc-800 dark:text-white"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex gap-2 font-semibold">
-                    <h3> {item.Processo || "Processo não encontrado"}</h3>
-                    <h3>Ref. Cliente: {item.Fatura || "N/A"}</h3>
+                </TableHeader>
+                <TableBody>
+                  {filteredProcessos.map((item, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{item.Processo || "-"}</TableCell>
+                      <TableCell>{item.Fatura || "-"}</TableCell>
+                      <TableCell>
+                        <span
+                          className="block max-w-[150px] truncate"
+                          title={item.Cliente}
+                        >
+                          {item.Cliente?.split(" ").slice(0, 8).join(" ") ||
+                            "-"}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className="block max-w-[150px] truncate"
+                          title={item.Importador}
+                        >
+                          {item.Importador?.split(" ").slice(0, 8).join(" ") ||
+                            "-"}
+                        </span>
+                      </TableCell>
+                      <TableCell>{item.DataCadastro || "-"}</TableCell>
+                      <TableCell>{item.DataPrevisaoETA || "-"}</TableCell>
+                      <TableCell>
+                        <Badge
+                          className={`rounded-lg px-3 py-1 text-sm text-white ${
+                            item.Destino?.toLowerCase() === "navegantes"
+                              ? "bg-[#2ecc71]"
+                              : ["sao francisco", "itapoa - sc"].includes(
+                                    item.Destino?.toLowerCase()
+                                  )
+                                ? "bg-[#e91e63]"
+                                : item.Destino?.toLowerCase() === "santos"
+                                  ? "bg-[#333333]"
+                                  : "bg-[#7f8c8d]"
+                          }`}
+                        >
+                          {item.Destino}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : filteredProcessos.length === 0 ? (
+              <div className="py-10 text-center text-xl text-gray-500">
+                Nenhum processo encontrado.
+              </div>
+            ) : (
+              filteredProcessos.map((item, index) => (
+                <div
+                  key={index}
+                  className="mb-5 flex flex-col gap-2 rounded-lg bg-gray-50 p-4 shadow-sm dark:bg-zinc-800 dark:text-white"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex gap-2 font-semibold">
+                      <h3> {item.Processo || "Processo não encontrado"}</h3>
+                      <h3>Ref. Cliente: {item.Fatura || "N/A"}</h3>
+                    </div>
+
+                    <Badge
+                      className={`rounded-lg px-3 py-1 text-sm text-white ${
+                        item.Destino?.toLowerCase() === "navegantes"
+                          ? "bg-[#2ecc71]"
+                          : ["sao francisco", "itapoa - sc"].includes(
+                                item.Destino?.toLowerCase()
+                              )
+                            ? "bg-[#e91e63]"
+                            : item.Destino?.toLowerCase() === "santos"
+                              ? "bg-[#333333]"
+                              : "bg-[#7f8c8d]"
+                      }`}
+                    >
+                      {item.Destino || "Destino indefinido"}
+                    </Badge>
                   </div>
 
-                  <Badge
-                    className={`rounded-lg px-3 py-1 text-sm text-white ${
-                      item.Destino?.toLowerCase() === "navegantes"
-                        ? "bg-[#2ecc71]"
-                        : ["sao francisco", "itapoa - sc"].includes(
-                              item.Destino?.toLowerCase()
-                            )
-                          ? "bg-[#e91e63]"
-                          : item.Destino?.toLowerCase() === "santos"
-                            ? "bg-[#333333]"
-                            : "bg-[#7f8c8d]"
-                    }`}
-                  >
-                    {item.Destino || "Destino indefinido"}
-                  </Badge>
+                  <p className="text-sm text-gray-500 dark:text-gray-300">
+                    Exportador: {item.Cliente || "N/A"}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-300">
+                    Importador: {item.Importador || "N/A"}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-300">
+                    Recebimento: {item.DataCadastro || "N/A"}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-300">
+                    Prev. Chegada: {item.DataPrevisaoETA || "N/A"}
+                  </p>
                 </div>
-
-                <p className="text-sm text-gray-500 dark:text-gray-300">
-                  Exportador: {item.Cliente || "N/A"}
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-300">
-                  Importador: {item.Importador || "N/A"}
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-300">
-                  Recebimento: {item.DataCadastro || "N/A"}
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-300">
-                  Prev. Chegada: {item.DataPrevisaoETA || "N/A"}
-                </p>
+              ))
+            )
+          ) : (
+            activeTab === "liconferencia" && (
+              <div className="space-y-4">
+                {isLoading ? (
+                  <Skeleton className="h-10 w-full" />
+                ) : (
+                  <div className="max-h-[550px] rounded-2xl border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Imp</TableHead>
+                          <TableHead>Ref. Cliente</TableHead>
+                          <TableHead>Exportador</TableHead>
+                          <TableHead>Importador</TableHead>
+                          <TableHead>Prev. Chegada</TableHead>
+                          <TableHead>Destino</TableHead>
+                          <TableHead onClick={() => handleSort("status")}>
+                            Status {sortDirection === "asc" ? "▲" : "▼"}
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {sortedOrquestra
+                          .filter((orquestra: any) =>
+                            isLiconferencia(orquestra.status)
+                          )
+                          .map((orquestra: any, index) => (
+                            <TableRow key={index}>
+                              <TableCell>{orquestra.imp || "-"}</TableCell>
+                              <TableCell>
+                                {orquestra.referencia || "-"}
+                              </TableCell>
+                              <TableCell>
+                                <span
+                                  className="block max-w-[150px] truncate"
+                                  title={orquestra.exportador}
+                                >
+                                  {orquestra.exportador
+                                    ?.split(" ")
+                                    .slice(0, 8)
+                                    .join(" ") || "-"}
+                                </span>
+                              </TableCell>
+                              <TableCell>
+                                <span
+                                  className="block max-w-[150px] truncate"
+                                  title={orquestra.importador}
+                                >
+                                  {orquestra.importador
+                                    ?.split(" ")
+                                    .slice(0, 8)
+                                    .join(" ") || "-"}
+                                </span>
+                              </TableCell>
+                              <TableCell>{orquestra.chegada || "-"}</TableCell>
+                              <TableCell>
+                                <Badge
+                                  className={`rounded-lg px-3 py-1 text-sm text-white ${
+                                    orquestra.destino?.toLowerCase() ===
+                                    "navegantes"
+                                      ? "bg-[#2ecc71]"
+                                      : [
+                                            "sao francisco",
+                                            "itapoa - sc",
+                                          ].includes(
+                                            orquestra.destino?.toLowerCase()
+                                          )
+                                        ? "bg-[#e91e63]"
+                                        : orquestra.destino?.toLowerCase() ===
+                                            "santos"
+                                          ? "bg-[#333333]"
+                                          : "bg-[#7f8c8d]"
+                                  }`}
+                                >
+                                  {orquestra.destino}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Select
+                                  value={orquestra.status || "Pendente"}
+                                  onValueChange={(value) =>
+                                    handleStatusChange(orquestra.imp, value)
+                                  }
+                                >
+                                  <SelectTrigger className="w-[180px] text-sm">
+                                    <SelectValue placeholder="Selecionar status" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Refazer">
+                                      Refazer Li
+                                    </SelectItem>
+                                    <SelectItem value="Pendente">
+                                      Pendente
+                                    </SelectItem>
+                                    <SelectItem value="Conferindo">
+                                      Conferindo
+                                    </SelectItem>
+                                    <SelectItem value="Fazer Orquestra">
+                                      Fazer Orquestra
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
               </div>
-            ))
+            )
           )}
         </div>
       ) : (
@@ -407,76 +570,84 @@ const Page = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sortedOrquestra.map((orquestra: any, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{orquestra.imp || "-"}</TableCell>
-                      <TableCell>{orquestra.referencia || "-"}</TableCell>
-                      <TableCell>
-                        <span
-                          className="block max-w-[150px] truncate"
-                          title={orquestra.exportador}
-                        >
-                          {orquestra.exportador
-                            ?.split(" ")
-                            .slice(0, 8)
-                            .join(" ") || "-"}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className="block max-w-[150px] truncate"
-                          title={orquestra.importador}
-                        >
-                          {orquestra.importador
-                            ?.split(" ")
-                            .slice(0, 8)
-                            .join(" ") || "-"}
-                        </span>
-                      </TableCell>
-                      <TableCell>{orquestra.chegada || "-"}</TableCell>
-                      <TableCell>
-                        <Badge
-                          className={`rounded-lg px-3 py-1 text-sm text-white ${
-                            orquestra.destino?.toLowerCase() === "navegantes"
-                              ? "bg-[#2ecc71]"
-                              : ["sao francisco", "itapoa - sc"].includes(
-                                    orquestra.destino?.toLowerCase()
-                                  )
-                                ? "bg-[#e91e63]"
-                                : orquestra.destino?.toLowerCase() === "santos"
-                                  ? "bg-[#333333]"
-                                  : "bg-[#7f8c8d]"
-                          }`}
-                        >
-                          {orquestra.destino}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          value={orquestra.status || "Pendente"}
-                          onValueChange={(value) =>
-                            handleStatusChange(orquestra.imp, value)
-                          }
-                        >
-                          <SelectTrigger className="w-[180px] text-sm">
-                            <SelectValue placeholder="Selecionar status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Pendente">Pendente</SelectItem>
-                            <SelectItem value="Em andamento">
-                              Em andamento
-                            </SelectItem>
-                            <SelectItem value="Finalizado">
-                              Finalizado
-                            </SelectItem>
-                            <SelectItem value="Aguardando informação">
-                              Aguardando informação
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {sortedOrquestra
+                    .filter((orquestra: any) => isOrquestra(orquestra.status))
+                    .map((orquestra: any, index: number) => (
+                      <TableRow key={index}>
+                        <TableCell>{orquestra.imp || "-"}</TableCell>
+                        <TableCell>{orquestra.referencia || "-"}</TableCell>
+                        <TableCell>
+                          <span
+                            className="block max-w-[150px] truncate"
+                            title={orquestra.exportador}
+                          >
+                            {orquestra.exportador
+                              ?.split(" ")
+                              .slice(0, 8)
+                              .join(" ") || "-"}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span
+                            className="block max-w-[150px] truncate"
+                            title={orquestra.importador}
+                          >
+                            {orquestra.importador
+                              ?.split(" ")
+                              .slice(0, 8)
+                              .join(" ") || "-"}
+                          </span>
+                        </TableCell>
+                        <TableCell>{orquestra.chegada || "-"}</TableCell>
+                        <TableCell>
+                          <Badge
+                            className={`rounded-lg px-3 py-1 text-sm text-white ${
+                              orquestra.destino?.toLowerCase() === "navegantes"
+                                ? "bg-[#2ecc71]"
+                                : ["sao francisco", "itapoa - sc"].includes(
+                                      orquestra.destino?.toLowerCase()
+                                    )
+                                  ? "bg-[#e91e63]"
+                                  : orquestra.destino?.toLowerCase() ===
+                                      "santos"
+                                    ? "bg-[#333333]"
+                                    : "bg-[#7f8c8d]"
+                            }`}
+                          >
+                            {orquestra.destino}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            value={orquestra.status || "Pendente"}
+                            onValueChange={(value) =>
+                              handleStatusChange(orquestra.imp, value)
+                            }
+                          >
+                            <SelectTrigger className="w-[180px] text-sm">
+                              <SelectValue placeholder="Selecionar status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Fazer Orquestra">
+                                Fazer Orquestra
+                              </SelectItem>
+                              <SelectItem value="Em andamento">
+                                Em andamento
+                              </SelectItem>
+                              <SelectItem value="Finalizado">
+                                Finalizado
+                              </SelectItem>
+                              <SelectItem value="Aguardando informação">
+                                Aguardando Informação
+                              </SelectItem>
+                              <SelectItem value="Refazer">
+                                Refazer LI
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                 </TableBody>
               </Table>
             </div>

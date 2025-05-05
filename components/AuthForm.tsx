@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { motion } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,14 +18,6 @@ import { Input } from "@/components/ui/input";
 import { createAccount, signInUser } from "@/lib/actions/user.actions";
 import { useState } from "react";
 import OTPModal from "./OTPModal";
-import dynamic from "next/dynamic";
-
-const MotionDiv = dynamic(
-  () => import("framer-motion").then((mod) => mod.motion.div),
-  {
-    ssr: false,
-  }
-);
 
 type FormType = "sign-in" | "sign-up";
 
@@ -142,7 +135,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
             {isLoading ? (
               <div className="flex space-x-1">
                 {[0, 1, 2].map((index) => (
-                  <MotionDiv
+                  <motion.div
                     key={index}
                     className="h-4 w-6 rounded-full bg-white"
                     style={{ borderRadius: "50% 50% 40% 40%" }}
