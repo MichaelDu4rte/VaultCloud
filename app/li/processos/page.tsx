@@ -129,55 +129,40 @@ const Page = () => {
     }
   };
 
-  // api processos
-  useEffect(() => {
-    let canceled = false;
-
-    const fetchAndSync = async () => {
-      try {
-        setIsLoading(true);
-
-        // 1) Busca no servidor
-        const response = await fetch("/api/processos", {
-          method: "POST",
-          headers: {
-            Authorization: "U1F7m!2x@Xq$Pz9eN#4vA%6tG^cL*bKq",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({}),
-        });
-        if (!response.ok) throw new Error("Erro ao buscar dados.");
-
-        const { dados: processosData = [] } = await response.json();
-
-        // 2) Insere/upsert no banco
-        await Promise.all(
-          processosData.map((p: any) => {
-            const orq = {
-              imp: p.Processo || "",
-              referencia: p.Fatura || "",
-              exportador: p.Cliente || "",
-              importador: p.Importador || "",
-              recebimento: p.DataCadastro || "",
-              chegada: p.DataPrevisaoETA || "",
-              destino: p.Destino || "",
-            };
-            return createOrquestra(orq);
-          })
-        );
-
-        // 3) Recarrega a lista de orquestras *já atualizada*
-        const orquestras = await getOrquestras();
-        if (!canceled) {
-          setOrquestra(orquestras);
-          setFilteredOrquestra(orquestras);
+    // api processos
+    useEffect(() => {
+      let canceled = false;
+    
+      const fetchAndSync = async () => {
+        try {
+          // 1) Busca no servidor
+          const response = await fetch("/api/processos", { … });
+          if (!response.ok) throw new Error("Erro ao buscar dados.");
+          const { dados: processosData = [] } = await response.json();
+    
+          // 2) Upsert no banco
+          await Promise.all(processosData.map(p => createOrquestra({ … })));
+    
+          // 3) Atualiza o estado de orquestras
+          if (!canceled) {
+            const orquestras = await getOrquestras();
+            setOrquestra(orquestras);
+            setFilteredOrquestra(orquestras);
+          }
+        } catch (err) {
+          console.error("Erro no polling:", err);
         }
-      } catch (err: any) {
-        console.error("Erro no polling de processos/orquestras:", err);
-      } finally {
-        if (!canceled) setIsLoading(false);
-      }
-    };
+      };
+    
+      const loop = async () => {
+        await fetchAndSync();
+        if (!canceled) setTimeout(loop, 60_000);
+      };
+    
+      loop();
+      return () => { canceled = true; };
+    }, []);
+
 
     const loop = async () => {
       await fetchAndSync();
