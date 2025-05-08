@@ -129,12 +129,14 @@ const Page = () => {
     }
   };
 
-   useEffect(() => {
+   
+useEffect(() => {
   let canceled = false;
+  let timeoutId: NodeJS.Timeout;
+  let ultimaAtualizacao: string | null = localStorage.getItem("ultimaAtualizacao");
 
-  const fetchAndSync = async () => {
+  const fetchAndScheduleNext = async () => {
     try {
-      // 1) Busca no servidor
       const response = await fetch("/api/processos", {
         method: "POST",
         headers: {
@@ -145,46 +147,62 @@ const Page = () => {
       });
 
       if (!response.ok) throw new Error("Erro ao buscar dados.");
-      const { dados: processosData = [] } = await response.json();
 
-      // 2) Upsert no banco
-      await Promise.all(
-        processosData.map(async (processo: Processo) => {
-          const orquestraData = {
-            imp: processo.Processo || "",
-            referencia: processo.Fatura || "",
-            exportador: processo.Cliente || "",
-            importador: processo.Importador || "",
-            recebimento: processo.DataCadastro || "",
-            chegada: processo.DataPrevisaoETA || "",
-            destino: processo.Destino || "",
-          };
-          await createOrquestra(orquestraData);
-        })
-      );
+      const { atualizado_em, dados: processosData = [] } = await response.json();
 
-      // 3) Atualiza o estado de orquestras
-      if (!canceled) {
-        const orquestras = await getOrquestras();
-        setOrquestra(orquestras);
-        setFilteredOrquestra(orquestras);
-        setIsLoading(false);
+      if (atualizado_em !== ultimaAtualizacao) {
+        ultimaAtualizacao = atualizado_em;
+        localStorage.setItem("ultimaAtualizacao", atualizado_em);
+
+        await Promise.all(
+          processosData.map(async (processo: Processo) => {
+            const orquestraData = {
+              imp: processo.Processo || "",
+              referencia: processo.Fatura || "",
+              exportador: processo.Cliente || "",
+              importador: processo.Importador || "",
+              recebimento: processo.DataCadastro || "",
+              chegada: processo.DataPrevisaoETA || "",
+              destino: processo.Destino || "",
+            };
+            await createOrquestra(orquestraData);
+          })
+        );
+
+        if (!canceled) {
+          const orquestras = await getOrquestras();
+          setOrquestra(orquestras);
+          setFilteredOrquestra(orquestras);
+          setIsLoading(false);
+        }
       }
+
+      // agendar próximo fetch para 10 minutos após o atualizado_em
+      const proximaExecucao = new Date(new Date(atualizado_em).getTime() + 10 * 60 * 1000);
+      const delay = proximaExecucao.getTime() - Date.now();
+
+      timeoutId = setTimeout(() => {
+        if (!canceled) fetchAndScheduleNext();
+      }, Math.max(delay, 0)); // segurança para não agendar negativo
     } catch (err) {
-      console.error("Erro no polling:", err);
+      console.error("Erro no sync:", err);
       setIsLoading(false);
+
+      // fallback para tentar de novo em 10 minutos
+      timeoutId = setTimeout(() => {
+        if (!canceled) fetchAndScheduleNext();
+      }, 600_000);
     }
   };
 
-  const loop = async () => {
-    await fetchAndSync();
-    if (!canceled) setTimeout(loop, 60_000);
+  fetchAndScheduleNext();
+
+  return () => {
+    canceled = true;
+    clearTimeout(timeoutId);
   };
-
-  loop();
-
-  return () => { canceled = true; };
 }, []);
+// END USE EFFECT
 
 
   const isLiconferencia = (status: string) => {
