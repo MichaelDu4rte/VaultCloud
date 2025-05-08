@@ -129,73 +129,63 @@ const Page = () => {
     }
   };
 
-    // api processos
-    useEffect(() => {
-      let canceled = false;
-    
-      const fetchAndSync = async () => {
-        try {
-          // 1) Busca no servidor
-          const response = await fetch("/api/processos", {
-            method: "POST",
-            headers: {
-              Authorization: "U1F7m!2x@Xq$Pz9eN#4vA%6tG^cL*bKq",
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({}),
-          });
+   useEffect(() => {
+  let canceled = false;
 
-          if (!response.ok) throw new Error("Erro ao buscar dados.");
-          const { dados: processosData = [] } = await response.json();
-    
-          // 2) Upsert no banco
-          await Promise.all(
-          processosData.map(async (processo: Processo) => {
-            const orquestraData = {
-              imp: processo.Processo || "",
-              referencia: processo.Fatura || "",
-              exportador: processo.Cliente || "",
-              importador: processo.Importador || "",
-              recebimento: processo.DataCadastro || "",
-              chegada: processo.DataPrevisaoETA || "",
-              destino: processo.Destino || "",
-            };
-            await createOrquestra(orquestraData);
-          })
-        );
+  const fetchAndSync = async () => {
+    try {
+      // 1) Busca no servidor
+      const response = await fetch("/api/processos", {
+        method: "POST",
+        headers: {
+          Authorization: "U1F7m!2x@Xq$Pz9eN#4vA%6tG^cL*bKq",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({}),
+      });
 
-    
-          // 3) Atualiza o estado de orquestras
-          if (!canceled) {
-            const orquestras = await getOrquestras();
-            setOrquestra(orquestras);
-            setFilteredOrquestra(orquestras);
-          }
-        } catch (err) {
-          console.error("Erro no polling:", err);
-        }
-      };
-    
-      const loop = async () => {
-        await fetchAndSync();
-        if (!canceled) setTimeout(loop, 60_000);
-      };
-    
-      loop();
-      return () => { canceled = true; };
-    }, []);
+      if (!response.ok) throw new Error("Erro ao buscar dados.");
+      const { dados: processosData = [] } = await response.json();
 
+      // 2) Upsert no banco
+      await Promise.all(
+        processosData.map(async (processo: Processo) => {
+          const orquestraData = {
+            imp: processo.Processo || "",
+            referencia: processo.Fatura || "",
+            exportador: processo.Cliente || "",
+            importador: processo.Importador || "",
+            recebimento: processo.DataCadastro || "",
+            chegada: processo.DataPrevisaoETA || "",
+            destino: processo.Destino || "",
+          };
+          await createOrquestra(orquestraData);
+        })
+      );
 
-    const loop = async () => {
-      await fetchAndSync();
-      if (!canceled) setTimeout(loop, 1 * 60 * 1000); // 1
-    };
+      // 3) Atualiza o estado de orquestras
+      if (!canceled) {
+        const orquestras = await getOrquestras();
+        setOrquestra(orquestras);
+        setFilteredOrquestra(orquestras);
+        setIsLoading(false);
+      }
+    } catch (err) {
+      console.error("Erro no polling:", err);
+      setIsLoading(false);
+    }
+  };
 
-    loop();
-    return () => {
-      canceled = true;
-    };
-  }, []);
+  const loop = async () => {
+    await fetchAndSync();
+    if (!canceled) setTimeout(loop, 60_000);
+  };
+
+  loop();
+
+  return () => { canceled = true; };
+}, []);
+
 
   const isLiconferencia = (status: string) => {
     return ["Conferindo", "Pendente", "FinalizadaLi"].includes(status);
