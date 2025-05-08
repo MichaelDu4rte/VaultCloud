@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Table,
   TableBody,
@@ -27,7 +27,7 @@ import {
 } from "@/lib/actions/orquestra.actions";
 
 const Page = () => {
-  const [processos, setProcessos] = useState<any[]>([]);
+  const [processos] = useState<any[]>([]);
   const [orquestra, setOrquestra] = useState<any[]>([]);
   const [filteredProcessos, setFilteredProcessos] = useState<any[]>([]);
   const [filteredOrquestra, setFilteredOrquestra] = useState<any[]>([]);
@@ -42,50 +42,37 @@ const Page = () => {
   const [sortField, setSortField] = useState("status");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
-  type Processo = {
-    Processo?: string;
-    Fatura?: string;
-    Cliente?: string;
-    Importador?: string;
-    DataCadastro?: string;
-    DataPrevisaoETA?: string;
-    Destino?: string;
-  };
-
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const term = event.target.value.toLowerCase();
-    setSearchTerm(term);
+    const rawTerm = event.target.value;
+    // lower + remove espaços
+    const term = rawTerm.toLowerCase().replace(/\s+/g, "");
 
-    // Filtrar processos
-    const filteredProcessos = processos.filter((processo) => {
-      const imp = processo.Processo?.toLowerCase() || "";
-      const importador = processo.Importador?.toLowerCase() || "";
-      const exportador = processo.Cliente?.toLowerCase() || "";
-      const ref = processo.Fatura?.toLowerCase() || "";
+    setSearchTerm(rawTerm);
+
+    // helper que normaliza qualquer string do objeto
+    const normalize = (str?: string) =>
+      (str || "").toLowerCase().replace(/\s+/g, "");
+
+    // filtra processos
+    const filteredProcessos = processos.filter((p) => {
       return (
-        imp.includes(term) ||
-        importador.includes(term) ||
-        exportador.includes(term) ||
-        ref.includes(term)
+        normalize(p.Processo).includes(term) ||
+        normalize(p.Importador).includes(term) ||
+        normalize(p.Cliente).includes(term) ||
+        normalize(p.Fatura).includes(term)
       );
     });
-
     setFilteredProcessos(filteredProcessos);
 
-    // Filtrar orquestras
-    const filteredOrquestras = orquestra.filter((orquestra) => {
-      const imp = orquestra.imp?.toLowerCase() || "";
-      const importador = orquestra.importador?.toLowerCase() || "";
-      const exportador = orquestra.exportador?.toLowerCase() || "";
-      const ref = orquestra.referencia?.toLowerCase() || "";
+    // filtra orquestras
+    const filteredOrquestras = orquestra.filter((o) => {
       return (
-        imp.includes(term) ||
-        importador.includes(term) ||
-        exportador.includes(term) ||
-        ref.includes(term)
+        normalize(o.imp).includes(term) ||
+        normalize(o.importador).includes(term) ||
+        normalize(o.exportador).includes(term) ||
+        normalize(o.referencia).includes(term)
       );
     });
-
     setFilteredOrquestra(filteredOrquestras);
   };
 
@@ -142,14 +129,15 @@ const Page = () => {
     }
   };
 
-  // Função para lidar com api processos
-  const prevProcessosRef = useRef<Processo[]>([]);
-
   // api processos
   useEffect(() => {
-    const fetchProcessos = async () => {
+    let canceled = false;
+
+    const fetchAndSync = async () => {
       try {
         setIsLoading(true);
+
+        // 1) Busca no servidor
         const response = await fetch("/api/processos", {
           method: "POST",
           headers: {
@@ -158,80 +146,52 @@ const Page = () => {
           },
           body: JSON.stringify({}),
         });
+        if (!response.ok) throw new Error("Erro ao buscar dados.");
 
-        if (!response.ok) {
-          throw new Error("Erro ao buscar dados.");
-        }
+        const { dados: processosData = [] } = await response.json();
 
-        const data = await response.json();
-        const processosData: Processo[] = data.dados || [];
-
-        setProcessos(processosData);
-        setFilteredProcessos(processosData);
-
-        const newImps = processosData.map((p) => p.Processo);
-        const prevImps = prevProcessosRef.current.map((p) => p.Processo);
-
-        // Detecta quais processos foram removidos
-        const removedImps = prevImps.filter((imp) => !newImps.includes(imp));
-        const removedProcessos = prevProcessosRef.current.filter((p) =>
-          removedImps.includes(p.Processo)
-        );
-
-        // Envia os dados dos processos removidos para createOrquestra
+        // 2) Insere/upsert no banco
         await Promise.all(
-          removedProcessos.map(async (processo) => {
-            const orquestraData = {
-              imp: processo.Processo || "",
-              referencia: processo.Fatura || "",
-              exportador: processo.Cliente || "",
-              importador: processo.Importador || "",
-              recebimento: processo.DataCadastro || "",
-              chegada: processo.DataPrevisaoETA || "",
-              destino: processo.Destino || "",
+          processosData.map((p: any) => {
+            const orq = {
+              imp: p.Processo || "",
+              referencia: p.Fatura || "",
+              exportador: p.Cliente || "",
+              importador: p.Importador || "",
+              recebimento: p.DataCadastro || "",
+              chegada: p.DataPrevisaoETA || "",
+              destino: p.Destino || "",
             };
-            await createOrquestra(orquestraData);
+            return createOrquestra(orq);
           })
         );
 
-        // Atualiza o estado e o ref com os novos processos
-        prevProcessosRef.current = processosData;
-      } catch (err: any) {
-        console.error("Erro ao buscar processos:", err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    // Chamada inicial
-    fetchProcessos();
-
-    // Define intervalo de 5 minutos (300000 ms)
-    const intervalId = setInterval(fetchProcessos, 5 * 60 * 1000);
-
-    return () => clearInterval(intervalId); // Limpeza do intervalo ao desmontar
-  }, []);
-
-  // Função para lidar db orquestra
-  useEffect(() => {
-    const fetchOrquestras = async () => {
-      try {
-        setIsLoading(true);
+        // 3) Recarrega a lista de orquestras *já atualizada*
         const orquestras = await getOrquestras();
-        setOrquestra(orquestras);
-        setFilteredOrquestra(orquestras);
+        if (!canceled) {
+          setOrquestra(orquestras);
+          setFilteredOrquestra(orquestras);
+        }
       } catch (err: any) {
-        console.error("Erro ao buscar orquestras:", err.message);
+        console.error("Erro no polling de processos/orquestras:", err);
       } finally {
-        setIsLoading(false);
+        if (!canceled) setIsLoading(false);
       }
     };
 
-    fetchOrquestras();
+    const loop = async () => {
+      await fetchAndSync();
+      if (!canceled) setTimeout(loop, 1 * 60 * 1000); // 1
+    };
+
+    loop();
+    return () => {
+      canceled = true;
+    };
   }, []);
 
   const isLiconferencia = (status: string) => {
-    return ["Refazer", "Conferindo", "Pendente"].includes(status);
+    return ["Conferindo", "Pendente", "FinalizadaLi"].includes(status);
   };
 
   const isOrquestra = (status: string) => {
@@ -241,6 +201,17 @@ const Page = () => {
       "Em andamento",
       "Finalizado",
     ].includes(status);
+  };
+
+  const isLIS = (status: string | null | undefined) => {
+    return (
+      status === null ||
+      status === undefined ||
+      status === "" ||
+      status === "PendenteLi" ||
+      status === "FazendoLi" ||
+      status === "Refazer"
+    );
   };
 
   return (
@@ -334,52 +305,99 @@ const Page = () => {
                     <TableHead>Recebimento</TableHead>
                     <TableHead>Prev. Chegada</TableHead>
                     <TableHead>Destino</TableHead>
+                    <TableHead onClick={() => handleSort("status")}>
+                      Status {sortDirection === "asc" ? "▲" : "▼"}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredProcessos.map((item, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{item.Processo || "-"}</TableCell>
-                      <TableCell>{item.Fatura || "-"}</TableCell>
-                      <TableCell>
-                        <span
-                          className="block max-w-[150px] truncate"
-                          title={item.Cliente}
-                        >
-                          {item.Cliente?.split(" ").slice(0, 8).join(" ") ||
-                            "-"}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className="block max-w-[150px] truncate"
-                          title={item.Importador}
-                        >
-                          {item.Importador?.split(" ").slice(0, 8).join(" ") ||
-                            "-"}
-                        </span>
-                      </TableCell>
-                      <TableCell>{item.DataCadastro || "-"}</TableCell>
-                      <TableCell>{item.DataPrevisaoETA || "-"}</TableCell>
-                      <TableCell>
-                        <Badge
-                          className={`rounded-lg px-3 py-1 text-sm text-white ${
-                            item.Destino?.toLowerCase() === "navegantes"
-                              ? "bg-[#2ecc71]"
-                              : ["sao francisco", "itapoa - sc"].includes(
-                                    item.Destino?.toLowerCase()
-                                  )
-                                ? "bg-[#e91e63]"
-                                : item.Destino?.toLowerCase() === "santos"
-                                  ? "bg-[#333333]"
-                                  : "bg-[#7f8c8d]"
-                          }`}
-                        >
-                          {item.Destino}
-                        </Badge>
+                  {filteredOrquestra.filter((o) => isLIS(o.status)).length ===
+                  0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={8}
+                        className="text-center text-muted-foreground"
+                      >
+                        Nenhuma IMP pendente encontrada.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    filteredOrquestra
+                      .filter((item) => isLIS(item.status))
+                      .map((item, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{item.imp || "-"}</TableCell>
+                          <TableCell>{item.referencia || "-"}</TableCell>
+                          <TableCell>
+                            <span
+                              className="block max-w-[150px] truncate"
+                              title={item.exportador}
+                            >
+                              {item.exportador
+                                ?.split(" ")
+                                .slice(0, 8)
+                                .join(" ") || "-"}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span
+                              className="block max-w-[150px] truncate"
+                              title={item.importador}
+                            >
+                              {item.importador
+                                ?.split(" ")
+                                .slice(0, 8)
+                                .join(" ") || "-"}
+                            </span>
+                          </TableCell>
+                          <TableCell>{item.recebimento || "-"}</TableCell>
+                          <TableCell>{item.chegada || "-"}</TableCell>
+                          <TableCell>
+                            <Badge
+                              className={`rounded-lg px-3 py-1 text-sm text-white ${
+                                item.destino?.toLowerCase() === "navegantes"
+                                  ? "bg-[#2ecc71]"
+                                  : ["sao francisco", "itapoa - sc"].includes(
+                                        item.destino?.toLowerCase()
+                                      )
+                                    ? "bg-[#e91e63]"
+                                    : item.destino?.toLowerCase() === "santos"
+                                      ? "bg-[#333333]"
+                                      : "bg-[#7f8c8d]"
+                              }`}
+                            >
+                              {item.destino || "-"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Select
+                              value={item.status || "Pendente"}
+                              onValueChange={(value) =>
+                                handleStatusChange(item.imp, value)
+                              }
+                            >
+                              <SelectTrigger className="w-[180px] text-sm">
+                                <SelectValue placeholder="Selecionar status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Refazer">
+                                  Refazer Li
+                                </SelectItem>
+                                <SelectItem value="PendenteLi">
+                                  Pendente
+                                </SelectItem>
+                                <SelectItem value="FazendoLi">
+                                  Em Andamento
+                                </SelectItem>
+                                <SelectItem value="Pendente">
+                                  Finalizado
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                  )}
                 </TableBody>
               </Table>
             ) : filteredProcessos.length === 0 ? (
@@ -444,6 +462,7 @@ const Page = () => {
                           <TableHead>Ref. Cliente</TableHead>
                           <TableHead>Exportador</TableHead>
                           <TableHead>Importador</TableHead>
+                          <TableHead>Recebimento</TableHead>
                           <TableHead>Prev. Chegada</TableHead>
                           <TableHead>Destino</TableHead>
                           <TableHead onClick={() => handleSort("status")}>
@@ -483,6 +502,9 @@ const Page = () => {
                                     .slice(0, 8)
                                     .join(" ") || "-"}
                                 </span>
+                              </TableCell>
+                              <TableCell>
+                                {orquestra.recebimento || "-"}
                               </TableCell>
                               <TableCell>{orquestra.chegada || "-"}</TableCell>
                               <TableCell>
@@ -562,6 +584,7 @@ const Page = () => {
                     <TableHead>Ref. Cliente</TableHead>
                     <TableHead>Exportador</TableHead>
                     <TableHead>Importador</TableHead>
+                    <TableHead>Recebimento</TableHead>
                     <TableHead>Prev. Chegada</TableHead>
                     <TableHead>Destino</TableHead>
                     <TableHead onClick={() => handleSort("status")}>
@@ -598,6 +621,7 @@ const Page = () => {
                               .join(" ") || "-"}
                           </span>
                         </TableCell>
+                        <TableCell>{orquestra.recebimento || "-"}</TableCell>
                         <TableCell>{orquestra.chegada || "-"}</TableCell>
                         <TableCell>
                           <Badge
