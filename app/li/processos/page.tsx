@@ -136,12 +136,34 @@ const Page = () => {
       const fetchAndSync = async () => {
         try {
           // 1) Busca no servidor
-          const response = await fetch("/api/processos", { … });
+          const response = await fetch("/api/processos", {
+            method: "POST",
+            headers: {
+              Authorization: "U1F7m!2x@Xq$Pz9eN#4vA%6tG^cL*bKq",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({}),
+          });
+
           if (!response.ok) throw new Error("Erro ao buscar dados.");
           const { dados: processosData = [] } = await response.json();
     
           // 2) Upsert no banco
-          await Promise.all(processosData.map(p => createOrquestra({ … })));
+          await Promise.all(
+          processosData.map(async (processo: Processo) => {
+            const orquestraData = {
+              imp: processo.Processo || "",
+              referencia: processo.Fatura || "",
+              exportador: processo.Cliente || "",
+              importador: processo.Importador || "",
+              recebimento: processo.DataCadastro || "",
+              chegada: processo.DataPrevisaoETA || "",
+              destino: processo.Destino || "",
+            };
+            await createOrquestra(orquestraData);
+          })
+        );
+
     
           // 3) Atualiza o estado de orquestras
           if (!canceled) {
