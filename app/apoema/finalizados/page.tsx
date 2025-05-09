@@ -103,7 +103,7 @@ const Page = () => {
   };
 
   return (
-    <div className="h-screen w-[90vw] bg-white p-8 dark:bg-zinc-900">
+    <div className="w-[90vw] bg-white p-8 rounded-sm dark:bg-zinc-900">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">
           Processos Finalizados
@@ -138,7 +138,7 @@ const Page = () => {
       />
 
       {/* Tabela */}
-      <div className="overflow-auto rounded-2xl border">
+      <div className="overflow-auto max-h-[90vh] rounded-2xl border">
         <Table>
           <TableHeader>
             <TableRow>
