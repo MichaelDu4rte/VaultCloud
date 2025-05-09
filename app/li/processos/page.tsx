@@ -129,65 +129,75 @@ const Page = () => {
     }
   };
 
-   
-useEffect(() => {
-  let canceled = false;
+  useEffect(() => {
+    let canceled = false;
 
-  const fetchAndSync = async () => {
-    try {
-      // 1) Busca no servidor
-      const response = await fetch("/api/processos", {
-        method: "POST",
-        headers: {
-          Authorization: "U1F7m!2x@Xq$Pz9eN#4vA%6tG^cL*bKq",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({}),
-      });
+    const fetchAndSync = async () => {
+      try {
+        // 1) Busca no servidor
+        const response = await fetch("/api/processos", {
+          method: "POST",
+          headers: {
+            Authorization: "U1F7m!2x@Xq$Pz9eN#4vA%6tG^cL*bKq",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}),
+        });
 
-      if (!response.ok) throw new Error("Erro ao buscar dados.");
-      const { dados: processosData = [] } = await response.json();
+        if (!response.ok) throw new Error("Erro ao buscar dados.");
+        const { dados: processosData = [] } = await response.json();
 
-      // 2) Upsert no banco
-      await Promise.all(
-        processosData.map(async (processo: Processo) => {
-          const orquestraData = {
-            imp: processo.Processo || "",
-            referencia: processo.Fatura || "",
-            exportador: processo.Cliente || "",
-            importador: processo.Importador || "",
-            recebimento: processo.DataCadastro || "",
-            chegada: processo.DataPrevisaoETA || "",
-            destino: processo.Destino || "",
-          };
-          await createOrquestra(orquestraData);
-        })
-      );
+        // 2) Upsert no banco
+        await Promise.all(
+          processosData.map(
+            async (processo: {
+              Processo: string;
+              Fatura: string;
+              Cliente: string;
+              Importador: string;
+              DataCadastro: string;
+              DataPrevisaoETA: string;
+              Destino: string;
+            }) => {
+              const orquestraData = {
+                imp: processo.Processo || "",
+                referencia: processo.Fatura || "",
+                exportador: processo.Cliente || "",
+                importador: processo.Importador || "",
+                recebimento: processo.DataCadastro || "",
+                chegada: processo.DataPrevisaoETA || "",
+                destino: processo.Destino || "",
+              };
+              await createOrquestra(orquestraData);
+            }
+          )
+        );
 
-      // 3) Atualiza o estado de orquestras
-      if (!canceled) {
-        const orquestras = await getOrquestras();
-        setOrquestra(orquestras);
-        setFilteredOrquestra(orquestras);
+        // 3) Atualiza o estado de orquestras
+        if (!canceled) {
+          const orquestras = await getOrquestras();
+          setOrquestra(orquestras);
+          setFilteredOrquestra(orquestras);
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.error("Erro no polling:", err);
         setIsLoading(false);
       }
-    } catch (err) {
-      console.error("Erro no polling:", err);
-      setIsLoading(false);
-    }
-  };
+    };
 
-  const loop = async () => {
-    await fetchAndSync();
-    if (!canceled) setTimeout(loop, 300_000); // 5 minutos
-  };
+    const loop = async () => {
+      await fetchAndSync();
+      if (!canceled) setTimeout(loop, 300_000); // 5 minutos
+    };
 
-  loop();
+    loop();
 
-  return () => { canceled = true; };
-}, []);
-// END USE EFFECT
-
+    return () => {
+      canceled = true;
+    };
+  }, []);
+  // END USE EFFECT
 
   const isLiconferencia = (status: string) => {
     return ["Conferindo", "Pendente", "FinalizadaLi"].includes(status);

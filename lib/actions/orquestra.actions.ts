@@ -237,3 +237,25 @@ export const updateOrquestraStatus = async (
     throw error;
   }
 };
+
+// Função para retornar todas as orquestras cujo status esteja como "finalizado"
+export const getOrquestrasFinalizadas = async () => {
+  try {
+    const { databases } = await createAdminClient();
+
+    const result = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.orquestraCollectionId,
+      [
+        Query.equal("status", "Finalizado"),
+        Query.limit(7000), // ajusta conforme o volume esperado
+      ]
+    );
+
+    // Retorna todos os campos de cada documento
+    return result.documents;
+  } catch (error) {
+    console.error("Erro ao buscar Orquestras finalizadas:", error);
+    throw error;
+  }
+};
