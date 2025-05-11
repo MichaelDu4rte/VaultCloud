@@ -59,6 +59,7 @@ export const updateOrquestra = async (
     chegada: string;
     destino: string;
     status?: string;
+    obs?: string;
   }
 ) => {
   try {
@@ -234,6 +235,39 @@ export const updateOrquestraStatus = async (
     return result;
   } catch (error) {
     console.error("Erro ao atualizar status da Orquestra:", error);
+    throw error;
+  }
+};
+
+// Função para atualizar a observação ("obs") de uma orquestra pelo campo "imp"
+export const updateOrquestraObs = async (imp: string, obs: string) => {
+  try {
+    const { databases } = await createAdminClient();
+
+    // 1) Busca o documento da orquestra pelo campo "imp"
+    const orquestras = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.orquestraCollectionId,
+      [Query.equal("imp", imp), Query.limit(1)]
+    );
+
+    if (orquestras.total === 0) {
+      throw new Error(`Orquestra com imp "${imp}" não encontrada.`);
+    }
+
+    const docId = orquestras.documents[0].$id;
+
+    // 2) Atualiza apenas o campo "obs"
+    const result = await databases.updateDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.orquestraCollectionId,
+      docId,
+      { obs }
+    );
+
+    return result;
+  } catch (error) {
+    console.error("Erro ao atualizar observação da Orquestra:", error);
     throw error;
   }
 };

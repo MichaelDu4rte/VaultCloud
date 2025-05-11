@@ -49,9 +49,9 @@ export default function EmptyState({ tab }: EmptyStateProps) {
         animationData={animation}
         loop
         autoplay
-        className="size-56 md:size-80"
+        className="size-56 md:size-56"
       />
-      <p className="mt-6 text-lg font-medium text-gray-700 dark:text-gray-200">
+      <p className="text-lg font-medium text-gray-700 dark:text-gray-200">
         {randomMsg}
       </p>
     </div>

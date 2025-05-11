@@ -23,9 +23,11 @@ import { Badge } from "@/components/ui/badge";
 import {
   createOrquestra,
   getOrquestras,
+  updateOrquestraObs,
   updateOrquestraStatus,
 } from "@/lib/actions/orquestra.actions";
 import EmptyState from "@/components/EmptyState";
+import { Textarea } from "@/components/ui/textarea";
 
 const Page = () => {
   const [orquestra, setOrquestra] = useState<any[]>([]);
@@ -226,6 +228,22 @@ const Page = () => {
     return [];
   };
 
+  const handleObsChange = async (imp: string, obs: string) => {
+    try {
+      await updateOrquestraObs(imp, obs);
+
+      setOrquestra((prev) =>
+        prev.map((o) => (o.imp === imp ? { ...o, obs } : o))
+      );
+
+      setFilteredOrquestra((prev) =>
+        prev.map((o) => (o.imp === imp ? { ...o, obs } : o))
+      );
+    } catch (error) {
+      console.error("Erro ao atualizar observação:", error);
+    }
+  };
+
   const currentData = getFilteredByTab();
   const showEmpty = !isLoading && currentData.length === 0;
 
@@ -295,16 +313,20 @@ const Page = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Imp</TableHead>
-                <TableHead>Ref. Cliente</TableHead>
-                <TableHead>Exportador</TableHead>
-                <TableHead>Importador</TableHead>
-                <TableHead>Recebimento</TableHead>
-                <TableHead>Prev. Chegada</TableHead>
-                <TableHead>Destino</TableHead>
-                <TableHead onClick={() => handleSort("status")}>
+                <TableHead className="min-w-[100px]">Imp</TableHead>
+                <TableHead className="min-w-[100px]">Ref. Cliente</TableHead>
+                <TableHead className="min-w-[100px]">Exportador</TableHead>
+                <TableHead className="min-w-[100px]">Importador</TableHead>
+                <TableHead className="min-w-[100px]">Recebimento</TableHead>
+                <TableHead className="min-w-[100px]">Prev. Chegada</TableHead>
+                <TableHead className="min-w-[100px]">Destino</TableHead>
+                <TableHead
+                  className="min-w-[140px]"
+                  onClick={() => handleSort("status")}
+                >
                   Status {sortDirection === "asc" ? "▲" : "▼"}
                 </TableHead>
+                <TableHead className="min-w-[100px]">Observação</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -356,7 +378,7 @@ const Page = () => {
                         handleStatusChange(item.imp, value)
                       }
                     >
-                      <SelectTrigger className="w-[180px] text-sm">
+                      <SelectTrigger className="w-[130px] text-sm">
                         <SelectValue placeholder="Selecionar status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -409,6 +431,13 @@ const Page = () => {
                         )}
                       </SelectContent>
                     </Select>
+                  </TableCell>
+                  <TableCell>
+                    <Textarea
+                      defaultValue={item.obs || ""}
+                      onBlur={(e) => handleObsChange(item.imp, e.target.value)}
+                      className="h-[40px] max-w-[150px] resize-none overflow-auto px-2 py-1 text-sm"
+                    />
                   </TableCell>
                 </TableRow>
               ))}
