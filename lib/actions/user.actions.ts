@@ -93,12 +93,16 @@ export const verifySecret = async ({
     // Cria uma sessão de autenticação com as credenciais fornecidas
     const session = await account.createSession(accountId, password);
 
-    // Armazena o segredo da sessão nos cookies do navegador com segurança
+    // Define a validade do cookie para 30 dias
+    const oneMonthInSeconds = 30 * 24 * 60 * 60;
+
+    // Armazena o segredo da sessão nos cookies com validade de 1 mês
     (await cookies()).set("appwrite-session", session.secret, {
       path: "/",
       httpOnly: true,
       sameSite: "strict",
       secure: true,
+      maxAge: oneMonthInSeconds, // Duração claramente definida para 1 mês
     });
 
     // Retorna o ID da sessão criada
