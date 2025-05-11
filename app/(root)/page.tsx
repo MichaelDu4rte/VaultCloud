@@ -1,12 +1,7 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import React, { useEffect, useState } from "react";
-import { Bar } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  BarElement,
-  CategoryScale,
-  LinearScale,
-} from "chart.js";
+
 import {
   CheckCircleIcon,
   ClockIcon,
@@ -22,52 +17,6 @@ import {
 } from "@/lib/actions/li.actions";
 import { FaCheckCircle, FaClock, FaThumbsUp } from "react-icons/fa";
 import { Skeleton } from "@/components/ui/skeleton";
-
-ChartJS.register(BarElement, CategoryScale, LinearScale);
-
-const salesData = {
-  labels: [
-    "16/08",
-    "17/08",
-    "18/08",
-    "19/08",
-    "20/08",
-    "21/08",
-    "22/08",
-    "23/08",
-  ],
-  datasets: [
-    {
-      label: "2022",
-      data: [340, 390, 320, 350, 390, 230, 340, 390],
-      backgroundColor: "#C084FC",
-      barThickness: 12,
-      borderRadius: 4,
-    },
-    {
-      label: "2023",
-      data: [280, 260, 300, 220, 260, 310, 290, 270],
-      backgroundColor: "#7C3AED",
-      barThickness: 12,
-      borderRadius: 4,
-    },
-  ],
-};
-
-const options = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: { legend: { display: false } },
-  scales: {
-    y: {
-      ticks: { stepSize: 100 },
-      grid: { color: "#f3f4f6" },
-    },
-    x: {
-      grid: { display: false },
-    },
-  },
-};
 
 const fadeIn = {
   hidden: { opacity: 0, y: 10 },
@@ -89,97 +38,108 @@ const Home = () => {
     useState<number>(0);
   const [quantidadeLicencasDeferidas, setQuantidadeLicencasDeferidas] =
     useState<number>(0);
-  const [isLoading, setIsLoading] = useState(true); // Estado de carregamento
-
-  // Função para salvar dados nos cookies
-  const setCookie = (name: string, value: string, days: number) => {
-    const date = new Date();
-    date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
-    document.cookie = `${name}=${value}; expires=${date.toUTCString()}; path=/`;
-  };
-
-  // Função para buscar dados dos cookies
-  const getCookie = (name: string): string | null => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()?.split(";").shift() || null;
-    return null;
-  };
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchLicencas = async () => {
       const today = new Date().toISOString().split("T")[0];
-      const cachedData = getCookie("licencasDeferidasHoje");
-      const cachedDate = getCookie("licencasDeferidasHojeDate");
+      const cachedData = localStorage.getItem("licencasDeferidasHoje");
+      const cachedDate = localStorage.getItem("licencasDeferidasHojeDate");
 
       if (cachedData && cachedDate === today) {
-        const licencas = JSON.parse(cachedData);
-        setLiData(licencas);
-      } else {
-        try {
-          const licencas = await getLicencasImportacaoDeferidasHoje();
-          const formatadas = licencas.map((item: LicencaImportacao) => ({
-            ...item,
-            previsaoDeferimento: item.previsaoDeferimento || "N/A",
-            status: item.situacao || "Indefinido",
-          }));
-
-          setLiData(formatadas);
-
-          setCookie("licencasDeferidasHoje", JSON.stringify(formatadas), 1);
-          setCookie("licencasDeferidasHojeDate", today, 1);
-        } catch (error) {
-          console.error(
-            "Erro ao buscar Licenças de Importação deferidas hoje:",
-            error
-          );
-        }
+        setLiData(JSON.parse(cachedData));
+        setIsLoading(false);
+        return;
       }
-      setIsLoading(false); // Finaliza o carregamento
+
+      try {
+        const licencas = await getLicencasImportacaoDeferidasHoje();
+        const formatadas = licencas.map((item: LicencaImportacao) => ({
+          ...item,
+          previsaoDeferimento: item.previsaoDeferimento || "N/A",
+          situacao: item.situacao || "Indefinido",
+        }));
+
+        localStorage.setItem(
+          "licencasDeferidasHoje",
+          JSON.stringify(formatadas)
+        );
+        localStorage.setItem("licencasDeferidasHojeDate", today);
+        setLiData(formatadas);
+      } catch (error) {
+        console.error("Erro ao buscar Licenças deferidas hoje:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    fetchLicencas();
+    if (!liData.length) fetchLicencas();
+    else setIsLoading(false);
   }, []);
 
   useEffect(() => {
     const fetchQuantidades = async () => {
+      const monthYear = `${new Date().getMonth()}-${new Date().getFullYear()}`;
+      const cachedQuantidades = localStorage.getItem("quantidadesLicencasMes");
+      const cachedMonthYear = localStorage.getItem(
+        "quantidadesLicencasMesDate"
+      );
+
+      if (cachedQuantidades && cachedMonthYear === monthYear) {
+        const quantidades = JSON.parse(cachedQuantidades);
+        setQuantidadeLicencas(quantidades.feitas);
+        setQuantidadeLicencasEmAnalise(quantidades.emAnalise);
+        setQuantidadeLicencasDeferidas(quantidades.deferidas);
+        return;
+      }
+
       try {
         const feitas = await getQuantidadeLicencasImportacaoFeitasNoMes();
         const emAnalise = await getQuantidadeLicencasImportacaoEmAnaliseNoMes();
         const deferidas = await getQuantidadeLicencasImportacaoDeferidasNoMes();
 
+        const newQuantidades = { feitas, emAnalise, deferidas };
+        localStorage.setItem(
+          "quantidadesLicencasMes",
+          JSON.stringify(newQuantidades)
+        );
+        localStorage.setItem("quantidadesLicencasMesDate", monthYear);
+
         setQuantidadeLicencas(feitas);
         setQuantidadeLicencasEmAnalise(emAnalise);
         setQuantidadeLicencasDeferidas(deferidas);
       } catch (error) {
-        console.error("Erro ao buscar quantidades de Licenças:", error);
+        console.error("Erro ao buscar quantidades:", error);
       }
     };
 
     fetchQuantidades();
   }, []);
 
-  const statusBadge = (status: string) => {
-    let style = "";
-    let icon = null;
+  type StatusStyles = {
+    [key: string]: [string, JSX.Element];
+  };
 
-    switch (status) {
-      case "Deferida":
-        style = "bg-green/30 text-green-700";
-        icon = <CheckCircleIcon className="size-4 text-green" />;
-        break;
-      case "Em Análise":
-        style = "bg-yellow-100 text-yellow-700";
-        icon = <ClockIcon className="size-4 text-yellow-600" />;
-        break;
-      case "Cancelada":
-        style = "bg-red/30 text-red-600";
-        icon = <XCircleIcon className="size-4 text-red" />;
-        break;
-      default:
-        style = "bg-gray-100 text-gray-600";
-        icon = <DocumentTextIcon className="size-4 text-gray-500" />;
-    }
+  const statusBadge = (status: string) => {
+    const styles: StatusStyles = {
+      Deferida: [
+        "bg-green/30 text-green-700",
+        <CheckCircleIcon key="deferida" className="size-4 text-green" />,
+      ],
+      "Em Análise": [
+        "bg-yellow-100 text-yellow-700",
+        <ClockIcon key="em-analise" className="size-4 text-yellow-600" />,
+      ],
+      Cancelada: [
+        "bg-red/30 text-red-600",
+        <XCircleIcon key="cancelada" className="size-4 text-red" />,
+      ],
+      default: [
+        "bg-gray-100 text-gray-600",
+        <DocumentTextIcon key="default" className="size-4 text-gray-500" />,
+      ],
+    };
+    const [style, icon] = styles[status] || styles.default;
 
     return (
       <span
@@ -193,91 +153,67 @@ const Home = () => {
 
   return (
     <div className="min-h-screen space-y-6 bg-gradient-to-br p-6 text-sm dark:bg-zinc-900">
-      {/* Top Section */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <motion.div
-          variants={fadeIn}
-          initial="hidden"
-          animate="visible"
-          className="col-span-2 rounded-2xl p-5 shadow-lg transition-all hover:shadow-xl dark:border dark:border-white/20 dark:bg-zinc-900/80 dark:text-white"
-        >
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-800 dark:text-white">
-              📈 Sales Overview
-            </h2>
-          </div>
-          <div className="h-64 w-full">
-            {isLoading ? (
-              <Skeleton className="size-full" />
-            ) : (
-              <Bar data={salesData} options={options} />
-            )}
-          </div>
-        </motion.div>
-
-        <div className="flex flex-col gap-4">
-          {isLoading
-            ? Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-20 w-full rounded-2xl" />
-              ))
-            : [
-                {
-                  label: "PROCESSOS FEITOS NO MÊS",
-                  value: quantidadeLicencas,
-                  icon: <FaCheckCircle className="text-3xl text-blue" />,
-                },
-                {
-                  label: "LIS A DEFERIR NO MÊS",
-                  value: quantidadeLicencasEmAnalise,
-                  icon: <FaClock className="text-3xl text-blue" />,
-                },
-                {
-                  label: "LIS DEFERIDAS NO MÊS",
-                  value: quantidadeLicencasDeferidas,
-                  icon: <FaThumbsUp className="text-3xl text-blue" />,
-                },
-              ].map((item, i) => (
-                <motion.div
-                  key={i}
-                  variants={fadeIn}
-                  initial="hidden"
-                  animate="visible"
-                  className="flex items-center justify-between rounded-2xl p-4 shadow-md transition hover:shadow-lg dark:border dark:border-white/20 dark:bg-zinc-900/80 dark:text-white"
-                >
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-light-200">
-                      {item.label}
-                    </p>
-                    <h3 className="text-xl font-bold">{item.value}</h3>
-                  </div>
-                  <div>{item.icon}</div>
-                </motion.div>
-              ))}
-        </div>
+      {/* Estatísticas */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        {isLoading
+          ? Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-20 w-full rounded-2xl" />
+            ))
+          : [
+              {
+                label: "PROCESSOS FEITOS NO MÊS",
+                value: quantidadeLicencas,
+                icon: <FaCheckCircle className="text-3xl text-blue" />,
+              },
+              {
+                label: "LIS A DEFERIR NO MÊS",
+                value: quantidadeLicencasEmAnalise,
+                icon: <FaClock className="text-3xl text-blue" />,
+              },
+              {
+                label: "LIS DEFERIDAS NO MÊS",
+                value: quantidadeLicencasDeferidas,
+                icon: <FaThumbsUp className="text-3xl text-blue" />,
+              },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                variants={fadeIn}
+                initial="hidden"
+                animate="visible"
+                className="flex items-center justify-between rounded-2xl bg-white p-4 shadow-md transition hover:shadow-lg dark:border dark:border-white/20 dark:bg-zinc-900/80 dark:text-white"
+              >
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-light-200">
+                    {item.label}
+                  </p>
+                  <h3 className="text-xl font-bold">{item.value}</h3>
+                </div>
+                <div>{item.icon}</div>
+              </motion.div>
+            ))}
       </div>
 
-      {/* Bottom Section */}
+      {/* Tabela de Licenças */}
       <motion.div
         variants={fadeIn}
         initial="hidden"
         animate="visible"
-        className="rounded-2xl bg-white p-6 shadow-lg transition hover:shadow-2xl dark:border dark:border-white/20 dark:bg-zinc-900/80 dark:text-white"
+        className="rounded-2xl bg-white p-6 shadow-lg dark:border dark:border-white/20 dark:bg-zinc-900/80 dark:text-white"
       >
-        <div className="mb-4">
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-800 dark:text-white">
-            <DocumentTextIcon className="size-6 text-indigo-500" />
-            Licenças de Importação Próximas de Deferimento
-          </h2>
-        </div>
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+          <DocumentTextIcon className="size-6 text-indigo-500" />
+          Licenças de Importação Próximas de Deferimento
+        </h2>
         <div className="overflow-auto">
           {isLoading ? (
             Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="mb-2 h-10 w-full rounded-lg" />
+              <Skeleton key={i} className="mb-2 h-10 rounded-lg" />
             ))
           ) : (
             <table className="w-full min-w-[700px] text-left text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 text-gray-500 dark:border-white/20 dark:text-light-200">
+              <thead className="text-gray-500 dark:text-light-200">
+                <tr className="border-b border-gray-200 dark:border-zinc-500">
                   <th className="pb-3">IMP</th>
                   <th>Importador</th>
                   <th>Número da LI</th>
@@ -287,29 +223,16 @@ const Home = () => {
               </thead>
               <tbody>
                 {liData.map((item, i) => (
-                  <motion.tr
+                  <tr
                     key={i}
-                    variants={fadeIn}
-                    initial="hidden"
-                    animate="visible"
-                    className="border-b border-gray-100 hover:bg-gray-50 dark:border-white/20 dark:hover:bg-zinc-900"
+                    className="border-b border-gray-100 capitalize hover:bg-gray-50 dark:border-zinc-700 dark:hover:bg-zinc-900"
                   >
-                    <td className="py-3 font-medium text-gray-800 dark:text-light-300">
-                      {item.imp}
-                    </td>
-                    <td className="py-3 text-gray-700 dark:text-light-300">
-                      {item.importador}
-                    </td>
-                    <td className="py-3 text-gray-700 dark:text-light-300">
-                      {item.numeroLi}
-                    </td>
-                    <td className="py-3 uppercase">
-                      {statusBadge(item.situacao)}
-                    </td>
-                    <td className="py-3 text-gray-500 dark:text-light-300">
-                      {item.previsaoDeferimento}
-                    </td>
-                  </motion.tr>
+                    <td className="py-3 font-medium">{item.imp}</td>
+                    <td className="py-3">{item.importador}</td>
+                    <td className="py-3">{item.numeroLi}</td>
+                    <td className="py-3">{statusBadge(item.situacao)}</td>
+                    <td className="py-3">{item.previsaoDeferimento}</td>
+                  </tr>
                 ))}
               </tbody>
             </table>
