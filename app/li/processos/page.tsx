@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   createOrquestra,
   getOrquestras,
+  updateOrquestra,
   updateOrquestraObs,
   updateOrquestraStatus,
 } from "@/lib/actions/orquestra.actions";
@@ -124,7 +125,6 @@ const Page = () => {
 
     const fetchAndSync = async () => {
       try {
-        // 1) Busca no servidor
         const response = await fetch("/api/processos", {
           method: "POST",
           headers: {
@@ -137,7 +137,6 @@ const Page = () => {
         if (!response.ok) throw new Error("Erro ao buscar dados.");
         const { dados: processosData = [] } = await response.json();
 
-        // 2) Upsert no banco
         await Promise.all(
           processosData.map(
             async (processo: {
@@ -158,12 +157,27 @@ const Page = () => {
                 chegada: processo.DataPrevisaoETA || "",
                 destino: processo.Destino || "",
               };
-              await createOrquestra(orquestraData);
+
+              // Tenta criar ou obter existente
+              const existingOrquestra = await createOrquestra(orquestraData);
+
+              // Verifica mudanças
+              const needsUpdate =
+                existingOrquestra.referencia !== orquestraData.referencia ||
+                existingOrquestra.exportador !== orquestraData.exportador ||
+                existingOrquestra.importador !== orquestraData.importador ||
+                existingOrquestra.recebimento !== orquestraData.recebimento ||
+                existingOrquestra.chegada !== orquestraData.chegada ||
+                existingOrquestra.destino !== orquestraData.destino;
+
+              // Atualiza se necessário
+              if (needsUpdate) {
+                await updateOrquestra(existingOrquestra.$id, orquestraData);
+              }
             }
           )
         );
 
-        // 3) Atualiza o estado de orquestras
         if (!canceled) {
           const orquestras = await getOrquestras();
           setOrquestra(orquestras);
@@ -187,6 +201,7 @@ const Page = () => {
       canceled = true;
     };
   }, []);
+
   // END USE EFFECT
 
   const isLiconferencia = (status: string) => {
