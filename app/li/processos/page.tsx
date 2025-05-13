@@ -345,8 +345,8 @@ const Page = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {currentData.map((item, index) => (
-                <TableRow key={index}>
+              {currentData.map((item) => (
+                <TableRow key={item.imp}>
                   <TableCell>{item.imp || "-"}</TableCell>
                   <TableCell>{item.referencia || "-"}</TableCell>
                   <TableCell>
@@ -449,7 +449,20 @@ const Page = () => {
                   </TableCell>
                   <TableCell>
                     <Textarea
-                      defaultValue={item.obs || ""}
+                      value={item.obs || ""}
+                      onChange={(e) => {
+                        const novoObs = e.target.value;
+                        setOrquestra((prev) =>
+                          prev.map((o) =>
+                            o.imp === item.imp ? { ...o, obs: novoObs } : o
+                          )
+                        );
+                        setFilteredOrquestra((prev) =>
+                          prev.map((o) =>
+                            o.imp === item.imp ? { ...o, obs: novoObs } : o
+                          )
+                        );
+                      }}
                       onBlur={(e) => handleObsChange(item.imp, e.target.value)}
                       className="h-[40px] max-w-[150px] resize-none overflow-auto px-2 py-1 text-sm"
                     />
