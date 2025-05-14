@@ -3,7 +3,6 @@
 
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
-
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,6 +23,8 @@ function parseBrazilianDate(dateStr: string): Date {
 
 const Page = () => {
   const [orquestras, setOrquestras] = useState<any[]>([]);
+  const [analysts, setAnalysts] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<string>("Todos");
   const [filteredOrquestras, setFilteredOrquestras] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortField, setSortField] = useState<"recebimento" | "chegada">(
@@ -31,6 +32,7 @@ const Page = () => {
   );
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [isLoading, setIsLoading] = useState(true);
+
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -41,8 +43,8 @@ const Page = () => {
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
-
       const data = await getOrquestrasFinalizadas();
+
       const sorted = [...data].sort((a, b) => {
         const dateA = parseBrazilianDate(a.recebimento);
         const dateB = parseBrazilianDate(b.recebimento);
@@ -50,32 +52,57 @@ const Page = () => {
       });
 
       setOrquestras(sorted);
-      setFilteredOrquestras(sorted);
+
+      const uniqueAnalysts = Array.from(
+        new Set(
+          sorted
+            .map((item) => item.analista)
+            .filter((a) => typeof a === "string" && a.trim() !== "")
+        )
+      );
+
+      setAnalysts(uniqueAnalysts);
+      setActiveTab("Todos"); // Aba padrão
       setIsLoading(false);
     };
 
     fetchData();
   }, []);
 
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const rawTerm = event.target.value;
-    const term = rawTerm.toLowerCase().replace(/\s+/g, "");
+  useEffect(() => {
+    let data = [...orquestras];
 
-    setSearchTerm(rawTerm);
+    // Filtro por analista
+    if (activeTab !== "Todos") {
+      data = data.filter((item) => item.analista === activeTab);
+    }
 
-    const normalize = (str?: string) =>
-      (str || "").toLowerCase().replace(/\s+/g, "");
+    // Filtro por busca
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase().replace(/\s+/g, "");
+      const normalize = (str = "") => str.toLowerCase().replace(/\s+/g, "");
 
-    const filtered = orquestras.filter((item) => {
-      return (
-        normalize(item.imp).includes(term) ||
-        normalize(item.referencia).includes(term) ||
-        normalize(item.importador).includes(term) ||
-        normalize(item.exportador).includes(term)
+      data = data.filter((item) =>
+        [item.imp, item.referencia, item.importador, item.exportador].some(
+          (field) => normalize(field).includes(term)
+        )
       );
+    }
+
+    // Ordenação
+    data.sort((a, b) => {
+      const dateA = parseBrazilianDate(a[sortField]);
+      const dateB = parseBrazilianDate(b[sortField]);
+      return sortDirection === "asc"
+        ? dateA.getTime() - dateB.getTime()
+        : dateB.getTime() - dateA.getTime();
     });
 
-    setFilteredOrquestras(filtered);
+    setFilteredOrquestras(data);
+  }, [orquestras, activeTab, searchTerm, sortField, sortDirection]);
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
   };
 
   const handleSort = (field: "recebimento" | "chegada") => {
@@ -83,16 +110,6 @@ const Page = () => {
       sortField === field && sortDirection === "asc" ? "desc" : "asc";
     setSortField(field);
     setSortDirection(direction);
-
-    const sorted = [...filteredOrquestras].sort((a, b) => {
-      const dateA = parseBrazilianDate(a[field]);
-      const dateB = parseBrazilianDate(b[field]);
-      return direction === "asc"
-        ? dateA.getTime() - dateB.getTime()
-        : dateB.getTime() - dateA.getTime();
-    });
-
-    setFilteredOrquestras(sorted);
   };
 
   const getArrow = (field: string) => {
@@ -104,27 +121,22 @@ const Page = () => {
 
   return (
     <div className="w-[90vw] bg-white p-8 shadow-lg dark:bg-zinc-900">
-      <div className="mb-6 flex items-center justify-between rounded-sm">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Processos Finalizados
-        </h1>
-
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Processos Finalizados</h1>
         {mounted && (
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
               theme === "dark"
-                ? "text-white shadow-sm dark:bg-zinc-800 dark:text-white"
-                : "bg-zinc-100 text-muted-foreground shadow-lg hover:bg-muted dark:text-[#aaaaaa] dark:hover:bg-[#2a2a2a]"
+                ? "text-white dark:bg-zinc-800"
+                : "bg-zinc-100 text-muted-foreground hover:bg-muted"
             }`}
-            title={`Trocar para o modo ${theme === "dark" ? "claro" : "escuro"}`}
           >
             {theme === "dark" ? "☀️ Tema Claro" : "🌙 Tema Escuro"}
           </button>
         )}
       </div>
 
-      {/* Descrição + Input */}
       <p className="mb-4 text-lg text-gray-600 dark:text-gray-300">
         Acompanhe todos os processos que a Apoema finalizou.
       </p>
@@ -134,8 +146,25 @@ const Page = () => {
         disabled={isLoading}
         value={searchTerm}
         onChange={handleSearch}
-        className="mb-5 mt-4 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary dark:border-white/30 dark:bg-zinc-900 md:w-96"
+        className="mb-5 mt-4 w-full md:w-96"
       />
+
+      {/* Abas com "Todos" + analistas */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-border pb-2">
+        {["Todos", ...analysts].map((analista) => (
+          <button
+            key={analista}
+            onClick={() => setActiveTab(analista)}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
+              activeTab === analista
+                ? "bg-primary text-white shadow-sm dark:text-black"
+                : "text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            {analista}
+          </button>
+        ))}
+      </div>
 
       {/* Tabela */}
       <div className="max-h-[90vh] overflow-auto rounded-2xl border">
@@ -164,11 +193,11 @@ const Page = () => {
           <TableBody>
             {isLoading ? (
               [...Array(6)].map((_, i) => (
-                <TableRow key={i}>
+                <TableRow key={`skeleton-${i}`}>
                   {Array(7)
                     .fill(0)
                     .map((_, j) => (
-                      <TableCell key={j}>
+                      <TableCell key={`cell-${i}-${j}`}>
                         <Skeleton className="h-4 w-full rounded" />
                       </TableCell>
                     ))}
@@ -177,40 +206,19 @@ const Page = () => {
             ) : filteredOrquestras.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={8}
+                  colSpan={7}
                   className="text-center text-muted-foreground"
                 >
-                  Nenhuma IMP pendente encontrada.
+                  Nenhuma IMP encontrada.
                 </TableCell>
               </TableRow>
             ) : (
-              filteredOrquestras.map((item, index) => (
-                <TableRow key={index} className="font-sans">
+              filteredOrquestras.map((item) => (
+                <TableRow key={`row-${item.imp}`}>
                   <TableCell>{item.imp || "-"}</TableCell>
-                  <TableCell>
-                    <span
-                      className="block max-w-[100px] truncate"
-                      title={item.referencia}
-                    >
-                      {item.referencia || "-"}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className="block max-w-[150px] truncate"
-                      title={item.exportador}
-                    >
-                      {item.exportador?.split(" ").slice(0, 8).join(" ") || "-"}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className="block max-w-[150px] truncate"
-                      title={item.importador}
-                    >
-                      {item.importador?.split(" ").slice(0, 8).join(" ") || "-"}
-                    </span>
-                  </TableCell>
+                  <TableCell>{item.referencia || "-"}</TableCell>
+                  <TableCell>{item.exportador || "-"}</TableCell>
+                  <TableCell>{item.importador || "-"}</TableCell>
                   <TableCell>{item.recebimento || "-"}</TableCell>
                   <TableCell>{item.chegada || "-"}</TableCell>
                   <TableCell>

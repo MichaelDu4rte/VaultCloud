@@ -16,6 +16,7 @@ export const createOrquestra = async (data: {
   chegada: string;
   destino: string;
   status?: string;
+  analista?: string;
 }) => {
   try {
     const { databases } = await createAdminClient();
@@ -60,6 +61,7 @@ export const updateOrquestra = async (
     destino: string;
     status?: string;
     obs?: string;
+    analista?: string;
   }
 ) => {
   try {

@@ -18,6 +18,11 @@ export const SIDENAV_ITEMS: SideNavItem[] = [
       { title: "Controle de li", path: "/li/controledeli" },
     ],
   },
+  // {
+  //   title: "Etiquetas",
+  //   path: "/etiquetas/controle",
+  //   icon: <Icon icon="lucide:tag" width="24" height="24" />,
+  // },
   {
     title: "Certificados",
     path: "/certificados",
